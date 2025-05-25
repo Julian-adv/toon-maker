@@ -24,14 +24,14 @@
         positive: ['6', 0],
         sampler_name: 'euler',
         scheduler: 'normal',
-        seed: 8566257,
+        seed: 8566257, // This seed will be randomized later
         steps: 20
       }
     },
     '4': {
       class_type: 'CheckpointLoaderSimple',
       inputs: {
-        ckpt_name: 'kakarot28D2025_v2025Semireal.safetensors' // Make sure this checkpoint exists
+        ckpt_name: 'kakarot28D2025_v2025Semireal.safetensors'
       }
     },
     '5': {
@@ -46,7 +46,7 @@
       class_type: 'CLIPTextEncode',
       inputs: {
         clip: ['4', 1],
-        text: 'masterpiece best quality girl' // This will be replaced
+        text: 'masterpiece best quality girl' // This will be replaced by user prompt
       }
     },
     '7': {
@@ -63,11 +63,20 @@
         vae: ['4', 2]
       }
     },
+    // Upscaling Node using ImageScaleBy
+    '11': {
+      class_type: 'ImageScaleBy',
+      inputs: {
+        image: ['8', 0], // Output from VAEDecode (node 8)
+        upscale_method: 'lanczos', // Common methods: 'nearest-exact', 'bilinear', 'area', 'bicubic'
+        scale_by: 2.0 // Upscale factor (e.g., 2.0 for 2x, 4.0 for 4x)
+      }
+    },
+    // Save Image Node (now takes input from upscaler)
     [SAVE_IMAGE_WEBSOCKET_NODE_ID]: {
-      // Using the constant as node ID
       class_type: 'SaveImageWebsocket',
       inputs: {
-        images: ['8', 0] // Output from VAEDecode
+        images: ['11', 0] // Image from UpscaleImageBy (node 11)
       }
     }
   }
