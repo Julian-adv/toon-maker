@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
+
   let promptValue: string = $state('')
   let isLoading: boolean = $state(false)
   let imageUrl: string | null = $state(null)
@@ -36,8 +38,8 @@
       class_type: 'EmptyLatentImage',
       inputs: {
         batch_size: 1,
-        height: 1024,
-        width: 1024
+        height: 1216,
+        width: 832
       }
     },
     '6': {
@@ -115,7 +117,7 @@
           // Let's assume it's direct image data for now, or adjust if it's wrapped.
           // For direct binary image data from SaveImageWebsocket, it might not have the 8-byte prefix.
           // If images are broken, this is the first place to check.
-          const imageBlob = new Blob([event.data.slice(8)], { type: 'image/png' }); // Assuming PNG, adjust if type is different or known. Sliced 8-byte header.
+          const imageBlob = new Blob([event.data.slice(8)], { type: 'image/png' }) // Assuming PNG, adjust if type is different or known. Sliced 8-byte header.
           if (imageUrl) URL.revokeObjectURL(imageUrl) // Revoke old URL to free memory
           imageUrl = URL.createObjectURL(imageBlob)
           console.log('Image URL created:', imageUrl)
@@ -144,7 +146,7 @@
       return
     }
     isLoading = true
-    imageUrl = null // Clear previous image
+    // imageUrl = null // Clear previous image
     lastExecutingNode = null
     clientId = crypto.randomUUID() // Generate a new client ID for this session
 
@@ -152,8 +154,7 @@
 
     const workflow = JSON.parse(JSON.stringify(defaultWorkflowPrompt))
     workflow['6'].inputs.text = promptValue
-    // Optionally, randomize seed for KSampler (node '3')
-    // workflow['3'].inputs.seed = Math.floor(Math.random() * 10000000000);
+    workflow['3'].inputs.seed = Math.floor(Math.random() * 10000000000)
 
     const payload = {
       prompt: workflow,
@@ -194,15 +195,13 @@
   }
 
   // Cleanup WebSocket on component destroy
-  $effect.root(() => {
-    return () => {
-      if (ws) {
-        console.log('Closing WebSocket on component destroy')
-        ws.close()
-      }
-      if (imageUrl) {
-        URL.revokeObjectURL(imageUrl)
-      }
+  onDestroy(() => {
+    if (ws) {
+      console.log('Closing WebSocket on component destroy')
+      ws.close()
+    }
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl)
     }
   })
 </script>
@@ -230,10 +229,6 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #f9f9f9;
     max-width: 1000px;
     width: 100%;
     margin: 20px auto;
@@ -264,6 +259,7 @@
   button:hover {
     background-color: #0056b3;
   }
+
   .image-container {
     margin-top: 20px;
     text-align: center;
@@ -271,7 +267,7 @@
 
   .image-container img {
     max-width: 100%;
-    max-height: 512px; /* Or whatever max height you prefer */
+    max-height: 1000px; /* Or whatever max height you prefer */
     border: 1px solid #ddd;
     border-radius: 4px;
   }
