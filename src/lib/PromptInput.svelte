@@ -8,8 +8,10 @@
   let ws: WebSocket | null = $state(null)
   let clientId: string = ''
   let lastExecutingNode: string | null = $state(null) // To track the node that produces the image
+  let useUpscale: boolean = $state(true)
+  let useFaceDetailer: boolean = $state(true)
 
-  const SAVE_IMAGE_WEBSOCKET_NODE_ID = 'save_image_ws' // Arbitrary ID for our websocket node
+  const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
   // Default ComfyUI workflow prompt - updated to use SaveImageWebsocket
   const defaultWorkflowPrompt = {
@@ -226,42 +228,6 @@
       _meta: {
         title: 'FaceDetailer2'
       }
-    },
-    [SAVE_IMAGE_WEBSOCKET_NODE_ID]: {
-      inputs: {
-        images: ['22', 0]
-      },
-      class_type: 'SaveImageWebsocket',
-      _meta: {
-        title: 'SaveImageWebsocket4'
-      }
-    },
-    '25': {
-      inputs: {
-        images: ['15', 0]
-      },
-      class_type: 'SaveImageWebsocket',
-      _meta: {
-        title: 'SaveImageWebsocket3'
-      }
-    },
-    '26': {
-      inputs: {
-        images: ['5', 0]
-      },
-      class_type: 'SaveImageWebsocket',
-      _meta: {
-        title: 'SaveImageWebsocket2'
-      }
-    },
-    '27': {
-      inputs: {
-        images: ['18', 0]
-      },
-      class_type: 'SaveImageWebsocket',
-      _meta: {
-        title: 'SaveImageWebsocket1'
-      }
     }
   }
 
@@ -303,15 +269,16 @@
       } else if (event.data instanceof ArrayBuffer) {
         // Check if the last executing node was our SaveImageWebsocket node
         // AND that the current prompt ID matches.
-        // Note: The 'executing' message for SaveImageWebsocket might arrive *before* the binary data.
-        if (lastExecutingNode === SAVE_IMAGE_WEBSOCKET_NODE_ID && currentPromptId === promptId) {
-          console.log('Binary image data received')
-          // The Python example slices [8:], this is for a specific header ComfyUI adds for some WS images.
-          // Let's assume it's direct image data for now, or adjust if it's wrapped.
-          // For direct binary image data from SaveImageWebsocket, it might not have the 8-byte prefix.
-          // If images are broken, this is the first place to check.
-          const imageBlob = new Blob([event.data.slice(8)], { type: 'image/png' }) // Assuming PNG, adjust if type is different or known. Sliced 8-byte header.
-          if (imageUrl) URL.revokeObjectURL(imageUrl) // Revoke old URL to free memory
+        // console.log('Binary data received. Last executing node:', lastExecutingNode, 'Expected node ID:', FINAL_SAVE_NODE_ID, 'Current Prompt ID:', currentPromptId);
+        if (
+          lastExecutingNode === FINAL_SAVE_NODE_ID &&
+          currentPromptId /* && execution prompt_id matches */
+        ) {
+          // console.log('Image data received for current prompt and correct node');
+          const imageBlob = new Blob([event.data.slice(8)], { type: 'image/png' })
+          if (imageUrl) {
+            URL.revokeObjectURL(imageUrl) // Clean up previous object URL
+          }
           imageUrl = URL.createObjectURL(imageBlob)
           console.log('Image URL created:', imageUrl)
           isLoading = false // Image received, stop loading
@@ -346,8 +313,42 @@
     console.log('Submitting prompt:', promptValue, 'Client ID:', clientId)
 
     const workflow = JSON.parse(JSON.stringify(defaultWorkflowPrompt))
+
+    let imageSourceNodeId: string
+
+    if (useUpscale) {
+      if (useFaceDetailer) {
+        // Upscale=true, FaceDetailer=true
+        imageSourceNodeId = '22' // Output of FaceDetailer2
+      } else {
+        // Upscale=true, FaceDetailer=false
+        imageSourceNodeId = '15' // Output of upscaled VAE Decode ('15')
+      }
+    } else {
+      // Upscale=false
+      if (useFaceDetailer) {
+        // Upscale=false, FaceDetailer=true
+        imageSourceNodeId = '5' // Output of FaceDetailer1
+      } else {
+        // Upscale=false, FaceDetailer=false
+        imageSourceNodeId = '18' // Output of non-upscaled VAE Decode ('18')
+      }
+    }
+
+    // Add the single, dynamically configured SaveImageWebsocket node
+    workflow[FINAL_SAVE_NODE_ID] = {
+      inputs: { images: [imageSourceNodeId, 0] }, // Assuming output index 0
+      class_type: 'SaveImageWebsocket',
+      _meta: { title: 'Final Save Image Websocket' }
+    }
+
     workflow['11'].inputs.text = promptValue
-    workflow['8'].inputs.seed = Math.floor(Math.random() * 10000000000)
+    // Apply random seed to relevant KSamplers
+    workflow['8'].inputs.seed = Math.floor(Math.random() * 10000000000000000) // KSampler 1
+    if (workflow['17']) {
+      // KSampler 2 (post-upscale)
+      workflow['17'].inputs.seed = Math.floor(Math.random() * 10000000000000000)
+    }
 
     const payload = {
       prompt: workflow,
@@ -417,6 +418,17 @@
   </button>
 </div>
 
+<div class="options-container">
+  <label>
+    <input type="checkbox" bind:checked={useUpscale} />
+    Upscale Image
+  </label>
+  <label>
+    <input type="checkbox" bind:checked={useFaceDetailer} />
+    Apply Face Detailer
+  </label>
+</div>
+
 <style>
   .prompt-container {
     display: flex;
@@ -463,5 +475,26 @@
     max-height: 1100px; /* Or whatever max height you prefer */
     border: 1px solid #ddd;
     border-radius: 4px;
+  }
+
+  .options-container {
+    display: flex;
+    gap: 20px;
+    margin: 10px auto;
+    padding: 10px;
+    max-width: 1000px;
+    width: 100%;
+    justify-content: center; /* Center checkboxes */
+    align-items: center;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #eee;
+  }
+
+  .options-container label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
   }
 </style>
