@@ -399,6 +399,12 @@
   })
 </script>
 
+{#if imageUrl}
+  <div class="image-container">
+    <img src={imageUrl} alt={`Generated image for prompt: ${promptValue || 'current prompt'}`} />
+  </div>
+{/if}
+
 <div class="prompt-container">
   <textarea
     bind:value={promptValue}
@@ -410,12 +416,6 @@
     {isLoading ? 'Generating...' : 'Generate'}
   </button>
 </div>
-
-{#if imageUrl}
-  <div class="image-container">
-    <img src={imageUrl} alt={`Generated image for prompt: ${promptValue || 'current prompt'}`} />
-  </div>
-{/if}
 
 <style>
   .prompt-container {
@@ -460,7 +460,7 @@
 
   .image-container img {
     max-width: 100%;
-    max-height: 1000px; /* Or whatever max height you prefer */
+    max-height: 1100px; /* Or whatever max height you prefer */
     border: 1px solid #ddd;
     border-radius: 4px;
   }

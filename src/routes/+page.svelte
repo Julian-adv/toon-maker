@@ -8,7 +8,6 @@
 </svelte:head>
 
 <section>
-  <h1>Toon Maker</h1>
   <PromptInput />
 </section>
 
@@ -20,10 +19,5 @@
     justify-content: center;
     min-height: 80vh; /* Make section take at least 80% of viewport height */
     text-align: center;
-  }
-
-  h1 {
-    color: #333;
-    margin-bottom: 2rem; /* Add some space below the title */
   }
 </style>
