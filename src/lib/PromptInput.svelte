@@ -10,6 +10,7 @@
   let lastExecutingNode: string | null = $state(null) // To track the node that produces the image
   let useUpscale: boolean = $state(true)
   let useFaceDetailer: boolean = $state(true)
+  let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
 
   const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
@@ -263,8 +264,9 @@
           //  // This means the SaveImageWebsocket node has finished sending its data.
           // }
         } else if (message.type === 'progress') {
-          // Handle progress updates if needed
-          // console.log('Progress:', message.data.value, '/', message.data.max);
+          // Handle progress updates
+          progressData.value = message.data.value
+          progressData.max = message.data.max
         }
       } else if (event.data instanceof ArrayBuffer) {
         // Check if the last executing node was our SaveImageWebsocket node
@@ -306,7 +308,8 @@
       return
     }
     isLoading = true
-    // imageUrl = null // Clear previous image
+    progressData.value = 0
+    progressData.max = 100 // Reset progress on new submission
     lastExecutingNode = null
     clientId = crypto.randomUUID() // Generate a new client ID for this session
 
@@ -403,6 +406,7 @@
 {#if imageUrl}
   <div class="image-container">
     <img src={imageUrl} alt={`Generated image for prompt: ${promptValue || 'current prompt'}`} />
+    <progress value={progressData.value} max={progressData.max}></progress>
   </div>
 {/if}
 
@@ -466,14 +470,40 @@
 
   .image-container {
     margin-top: 20px;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .image-container img {
     max-width: 100%;
     max-height: 1100px; /* Or whatever max height you prefer */
-    border: 1px solid #ddd;
     border-radius: 4px;
+    display: block;
+  }
+
+  .image-container progress {
+    width: 100%;
+    height: 5px;
+    display: block;
+    background-color: white; /* Background of the track */
+  }
+
+  /* For WebKit/Blink browsers (Chrome, Safari, Edge, Opera) */
+  .image-container progress::-webkit-progress-bar {
+    background-color: white;
+    border-radius: 3px;
+  }
+
+  .image-container progress::-webkit-progress-value {
+    background-color: gray;
+    border-radius: 3px;
+  }
+
+  /* For Firefox */
+  .image-container progress::-moz-progress-bar {
+    background-color: gray;
+    border-radius: 3px;
   }
 
   .options-container {
