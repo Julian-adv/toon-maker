@@ -13,70 +13,254 @@
 
   // Default ComfyUI workflow prompt - updated to use SaveImageWebsocket
   const defaultWorkflowPrompt = {
-    '3': {
-      class_type: 'KSampler',
-      inputs: {
-        cfg: 8,
-        denoise: 1,
-        latent_image: ['5', 0],
-        model: ['4', 0],
-        negative: ['7', 0],
-        positive: ['6', 0],
-        sampler_name: 'euler',
-        scheduler: 'normal',
-        seed: 8566257, // This seed will be randomized later
-        steps: 20
-      }
-    },
-    '4': {
-      class_type: 'CheckpointLoaderSimple',
-      inputs: {
-        ckpt_name: 'kakarot28D2025_v2025Semireal.safetensors'
-      }
-    },
     '5': {
-      class_type: 'EmptyLatentImage',
       inputs: {
-        batch_size: 1,
-        height: 1216,
-        width: 832
+        guide_size: 512,
+        guide_size_for: true,
+        max_size: 1024,
+        seed: 836267740683999,
+        steps: 20,
+        cfg: 8,
+        sampler_name: 'euler_ancestral',
+        scheduler: 'simple',
+        denoise: 0.5,
+        feather: 5,
+        noise_mask: true,
+        force_inpaint: true,
+        bbox_threshold: 0.5,
+        bbox_dilation: 10,
+        bbox_crop_factor: 3,
+        sam_detection_hint: 'center-1',
+        sam_dilation: 0,
+        sam_threshold: 0.93,
+        sam_bbox_expansion: 0,
+        sam_mask_hint_threshold: 0.7,
+        sam_mask_hint_use_negative: 'False',
+        drop_size: 10,
+        wildcard: '',
+        cycle: 1,
+        inpaint_model: false,
+        noise_mask_feather: 20,
+        tiled_encode: false,
+        tiled_decode: false,
+        image: ['18', 0],
+        model: ['10', 0],
+        clip: ['10', 1],
+        vae: ['10', 2],
+        positive: ['11', 0],
+        negative: ['12', 0],
+        bbox_detector: ['20', 0],
+        sam_model_opt: ['6', 0]
+      },
+      class_type: 'FaceDetailer',
+      _meta: {
+        title: 'FaceDetailer1'
       }
     },
     '6': {
-      class_type: 'CLIPTextEncode',
       inputs: {
-        clip: ['4', 1],
-        text: 'masterpiece best quality girl' // This will be replaced by user prompt
-      }
-    },
-    '7': {
-      class_type: 'CLIPTextEncode',
-      inputs: {
-        clip: ['4', 1],
-        text: 'bad hands'
+        model_name: 'sam_vit_b_01ec64.pth',
+        device_mode: 'AUTO'
+      },
+      class_type: 'SAMLoader',
+      _meta: {
+        title: 'SAMLoader (Impact)'
       }
     },
     '8': {
-      class_type: 'VAEDecode',
       inputs: {
-        samples: ['3', 0],
-        vae: ['4', 2]
+        seed: 764212958336468,
+        steps: 28,
+        cfg: 5,
+        sampler_name: 'euler_ancestral',
+        scheduler: 'simple',
+        denoise: 1,
+        model: ['10', 0],
+        positive: ['11', 0],
+        negative: ['12', 0],
+        latent_image: ['9', 0]
+      },
+      class_type: 'KSampler',
+      _meta: {
+        title: 'KSampler'
       }
     },
-    // Upscaling Node using ImageScaleBy
+    '9': {
+      inputs: {
+        width: 832,
+        height: 1216,
+        batch_size: 1
+      },
+      class_type: 'EmptyLatentImage',
+      _meta: {
+        title: 'Empty Latent Image'
+      }
+    },
+    '10': {
+      inputs: {
+        ckpt_name: 'kakarot28D2025_v2025Semireal.safetensors'
+      },
+      class_type: 'CheckpointLoaderSimple',
+      _meta: {
+        title: 'Load Checkpoint'
+      }
+    },
     '11': {
-      class_type: 'ImageScaleBy',
       inputs: {
-        image: ['8', 0], // Output from VAEDecode (node 8)
-        upscale_method: 'lanczos', // Common methods: 'nearest-exact', 'bilinear', 'area', 'bicubic'
-        scale_by: 2.0 // Upscale factor (e.g., 2.0 for 2x, 4.0 for 4x)
+        text: 'maid,christian louboutin high heels',
+        clip: ['10', 1]
+      },
+      class_type: 'CLIPTextEncode',
+      _meta: {
+        title: 'CLIP Text Encode (Prompt)'
       }
     },
-    // Save Image Node (now takes input from upscaler)
-    [SAVE_IMAGE_WEBSOCKET_NODE_ID]: {
-      class_type: 'SaveImageWebsocket',
+    '12': {
       inputs: {
-        images: ['11', 0] // Image from UpscaleImageBy (node 11)
+        text: '',
+        clip: ['10', 1]
+      },
+      class_type: 'CLIPTextEncode',
+      _meta: {
+        title: 'CLIP Text Encode (Prompt)'
+      }
+    },
+    '14': {
+      inputs: {
+        upscale_method: 'nearest-exact',
+        scale_by: 2.0000000000000004,
+        samples: ['8', 0]
+      },
+      class_type: 'LatentUpscaleBy',
+      _meta: {
+        title: 'Upscale Latent By'
+      }
+    },
+    '15': {
+      inputs: {
+        samples: ['17', 0],
+        vae: ['10', 2]
+      },
+      class_type: 'VAEDecode',
+      _meta: {
+        title: 'VAE Decode'
+      }
+    },
+    '17': {
+      inputs: {
+        seed: 265369671560568,
+        steps: 28,
+        cfg: 5,
+        sampler_name: 'euler_ancestral',
+        scheduler: 'simple',
+        denoise: 0.4000000000000001,
+        model: ['10', 0],
+        positive: ['11', 0],
+        negative: ['12', 0],
+        latent_image: ['14', 0]
+      },
+      class_type: 'KSampler',
+      _meta: {
+        title: 'KSampler'
+      }
+    },
+    '18': {
+      inputs: {
+        samples: ['8', 0],
+        vae: ['10', 2]
+      },
+      class_type: 'VAEDecode',
+      _meta: {
+        title: 'VAE Decode'
+      }
+    },
+    '20': {
+      inputs: {
+        model_name: 'bbox/face_yolov8m.pt'
+      },
+      class_type: 'UltralyticsDetectorProvider',
+      _meta: {
+        title: 'UltralyticsDetectorProvider'
+      }
+    },
+    '22': {
+      inputs: {
+        guide_size: 512,
+        guide_size_for: true,
+        max_size: 1024,
+        seed: 781342677367830,
+        steps: 20,
+        cfg: 8,
+        sampler_name: 'euler_ancestral',
+        scheduler: 'simple',
+        denoise: 0.5,
+        feather: 5,
+        noise_mask: true,
+        force_inpaint: true,
+        bbox_threshold: 0.5,
+        bbox_dilation: 10,
+        bbox_crop_factor: 3,
+        sam_detection_hint: 'center-1',
+        sam_dilation: 0,
+        sam_threshold: 0.93,
+        sam_bbox_expansion: 0,
+        sam_mask_hint_threshold: 0.7,
+        sam_mask_hint_use_negative: 'False',
+        drop_size: 10,
+        wildcard: '',
+        cycle: 1,
+        inpaint_model: false,
+        noise_mask_feather: 20,
+        tiled_encode: false,
+        tiled_decode: false,
+        image: ['15', 0],
+        model: ['10', 0],
+        clip: ['10', 1],
+        vae: ['10', 2],
+        positive: ['11', 0],
+        negative: ['12', 0],
+        bbox_detector: ['20', 0],
+        sam_model_opt: ['6', 0]
+      },
+      class_type: 'FaceDetailer',
+      _meta: {
+        title: 'FaceDetailer2'
+      }
+    },
+    [SAVE_IMAGE_WEBSOCKET_NODE_ID]: {
+      inputs: {
+        images: ['22', 0]
+      },
+      class_type: 'SaveImageWebsocket',
+      _meta: {
+        title: 'SaveImageWebsocket4'
+      }
+    },
+    '25': {
+      inputs: {
+        images: ['15', 0]
+      },
+      class_type: 'SaveImageWebsocket',
+      _meta: {
+        title: 'SaveImageWebsocket3'
+      }
+    },
+    '26': {
+      inputs: {
+        images: ['5', 0]
+      },
+      class_type: 'SaveImageWebsocket',
+      _meta: {
+        title: 'SaveImageWebsocket2'
+      }
+    },
+    '27': {
+      inputs: {
+        images: ['18', 0]
+      },
+      class_type: 'SaveImageWebsocket',
+      _meta: {
+        title: 'SaveImageWebsocket1'
       }
     }
   }
@@ -162,8 +346,8 @@
     console.log('Submitting prompt:', promptValue, 'Client ID:', clientId)
 
     const workflow = JSON.parse(JSON.stringify(defaultWorkflowPrompt))
-    workflow['6'].inputs.text = promptValue
-    workflow['3'].inputs.seed = Math.floor(Math.random() * 10000000000)
+    workflow['11'].inputs.text = promptValue
+    workflow['8'].inputs.seed = Math.floor(Math.random() * 10000000000)
 
     const payload = {
       prompt: workflow,
