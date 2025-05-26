@@ -413,20 +413,19 @@
     rows="3"
     class="focus:outline-blue-500"
   ></textarea>
-  <button onclick={handleSubmit} disabled={isLoading}>
-    {isLoading ? 'Generating...' : 'Generate'}
-  </button>
-</div>
-
-<div class="options-container">
-  <label>
-    <input type="checkbox" bind:checked={useUpscale} />
-    Upscale Image
-  </label>
-  <label>
-    <input type="checkbox" bind:checked={useFaceDetailer} />
-    Apply Face Detailer
-  </label>
+  <div class="options-container">
+    <label>
+      <input type="checkbox" bind:checked={useUpscale} />
+      Upscale Image
+    </label>
+    <label>
+      <input type="checkbox" bind:checked={useFaceDetailer} />
+      Apply Face Detailer
+    </label>
+    <button onclick={handleSubmit} disabled={isLoading}>
+      {isLoading ? 'Generating...' : 'Generate'}
+    </button>
+  </div>
 </div>
 
 <style>
@@ -480,15 +479,10 @@
   .options-container {
     display: flex;
     gap: 20px;
-    margin: 10px auto;
-    padding: 10px;
     max-width: 1000px;
     width: 100%;
     justify-content: center; /* Center checkboxes */
     align-items: center;
-    background-color: #f9f9f9;
-    border-radius: 4px;
-    border: 1px solid #eee;
   }
 
   .options-container label {
