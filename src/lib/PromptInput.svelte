@@ -19,6 +19,17 @@
   let poseValue: string = $state('')
   let backgroundsValue: string = $state('')
 
+  let qualityValues: string[] = $state([])
+  let selectedQualityValue: string = $state('')
+  let characterValues: string[] = $state([])
+  let selectedCharacterValue: string = $state('')
+  let outfitValues: string[] = $state([])
+  let selectedOutfitValue: string = $state('')
+  let poseValues: string[] = $state([])
+  let selectedPoseValue: string = $state('')
+  let backgroundsValues: string[] = $state([])
+  let selectedBackgroundsValue: string = $state('')
+
   const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
   // Default ComfyUI workflow prompt - updated to use SaveImageWebsocket
@@ -498,6 +509,8 @@
       bind:value={qualityValue}
       placeholder="Enter quality details..."
       rows={5}
+      options={qualityValues}
+      bind:selectedValue={selectedQualityValue}
     />
     <TextAreaInput
       id="character-prompt"
@@ -505,6 +518,8 @@
       bind:value={characterValue}
       placeholder="Describe the character..."
       rows={5}
+      options={characterValues}
+      bind:selectedValue={selectedCharacterValue}
     />
     <TextAreaInput
       id="outfit-prompt"
@@ -512,6 +527,8 @@
       bind:value={outfitValue}
       placeholder="Describe the outfit..."
       rows={5}
+      options={outfitValues}
+      bind:selectedValue={selectedOutfitValue}
     />
     <TextAreaInput
       id="pose-prompt"
@@ -519,6 +536,8 @@
       bind:value={poseValue}
       placeholder="Describe the pose..."
       rows={5}
+      options={poseValues}
+      bind:selectedValue={selectedPoseValue}
     />
     <TextAreaInput
       id="backgrounds-prompt"
@@ -526,6 +545,8 @@
       bind:value={backgroundsValue}
       placeholder="Describe the background..."
       rows={5}
+      options={backgroundsValues}
+      bind:selectedValue={selectedBackgroundsValue}
     />
   </div>
   <div class="image-container">
