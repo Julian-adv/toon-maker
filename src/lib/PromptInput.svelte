@@ -13,6 +13,11 @@
   let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
   let availableCheckpoints: string[] = $state([])
   let selectedCheckpoint: string | null = $state(null)
+  let qualityValue: string = $state('')
+  let characterValue: string = $state('')
+  let outfitValue: string = $state('')
+  let poseValue: string = $state('')
+  let backgroundsValue: string = $state('')
 
   const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
@@ -309,6 +314,11 @@
     if (selectedCheckpoint) {
       localStorage.setItem('selectedCheckpoint', selectedCheckpoint)
     }
+    localStorage.setItem('qualityValue', qualityValue)
+    localStorage.setItem('characterValue', characterValue)
+    localStorage.setItem('outfitValue', outfitValue)
+    localStorage.setItem('poseValue', poseValue)
+    localStorage.setItem('backgroundsValue', backgroundsValue)
     localStorage.setItem('promptValue', promptValue)
     localStorage.setItem('useUpscale', JSON.stringify(useUpscale))
     localStorage.setItem('useFaceDetailer', JSON.stringify(useFaceDetailer))
@@ -455,6 +465,12 @@
     const savedFaceDetailer = localStorage.getItem('useFaceDetailer')
     useFaceDetailer = savedFaceDetailer !== null ? JSON.parse(savedFaceDetailer) : true
 
+    qualityValue = localStorage.getItem('qualityValue') || ''
+    characterValue = localStorage.getItem('characterValue') || ''
+    outfitValue = localStorage.getItem('outfitValue') || ''
+    poseValue = localStorage.getItem('poseValue') || ''
+    backgroundsValue = localStorage.getItem('backgroundsValue') || ''
+
     const checkpoints = await fetchCheckpoints()
     if (checkpoints && checkpoints.length > 0) {
       availableCheckpoints = checkpoints
@@ -472,22 +488,56 @@
   })
 </script>
 
-<div class="image-container">
-  {#if imageUrl}
-    <img src={imageUrl} alt={`Generated image for prompt: ${promptValue || 'current prompt'}`} />
-  {:else}
-    <div class="image-placeholder"></div>
-  {/if}
-  <progress value={progressData.value} max={progressData.max}></progress>
+<div class="content-wrapper">
+  <div class="quality-input-container">
+    <label for="quality-prompt">Quality</label>
+    <textarea
+      id="quality-prompt"
+      bind:value={qualityValue}
+      placeholder="Enter quality details..."
+      rows="10"
+    ></textarea>
+    <label for="character-prompt">Character</label>
+    <textarea
+      id="character-prompt"
+      bind:value={characterValue}
+      placeholder="Enter character details..."
+      rows="10"
+    ></textarea>
+    <label for="outfit-prompt">Outfit</label>
+    <textarea
+      id="outfit-prompt"
+      bind:value={outfitValue}
+      placeholder="Enter outfit details..."
+      rows="10"
+    ></textarea>
+    <label for="pose-prompt">Pose</label>
+    <textarea id="pose-prompt" bind:value={poseValue} placeholder="Enter pose details..." rows="10"
+    ></textarea>
+    <label for="backgrounds-prompt">Backgrounds</label>
+    <textarea
+      id="backgrounds-prompt"
+      bind:value={backgroundsValue}
+      placeholder="Enter backgrounds details..."
+      rows="10"
+    ></textarea>
+  </div>
+  <div class="image-container">
+    <div class="image-display">
+      {#if imageUrl}
+        <img
+          src={imageUrl}
+          alt={`Generated image for prompt: ${promptValue || 'current prompt'}`}
+        />
+      {:else}
+        <div class="image-placeholder"></div>
+      {/if}
+    </div>
+    <progress value={progressData.value} max={progressData.max}></progress>
+  </div>
 </div>
 
 <div class="prompt-container">
-  <textarea
-    bind:value={promptValue}
-    placeholder="Enter your prompt..."
-    rows="3"
-    class="focus:outline-blue-500"
-  ></textarea>
   <div class="options-container">
     <label>
       <input type="checkbox" bind:checked={useUpscale} />
@@ -550,10 +600,50 @@
   }
 
   .image-container {
-    margin-top: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+
+  .content-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    width: 100%;
+    justify-content: center;
+    align-items: flex-start; /* Align items to the top */
+    padding: 20px;
+  }
+
+  .image-display {
+    flex-shrink: 0; /* Prevent image from shrinking */
+  }
+
+  .quality-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-grow: 1;
+    max-width: 300px; /* Or adjust as needed */
+  }
+
+  .quality-input-container label {
+    font-weight: bold;
+    font-size: 16px;
+    width: 100%;
+    text-align: left;
+  }
+
+  .quality-input-container textarea {
+    width: 100%;
+    height: 200px; /* Adjust height as needed */
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    resize: vertical;
+    box-sizing: border-box;
+    background-color: #fff;
   }
 
   .image-container img {
