@@ -16,13 +16,19 @@
     options: string[]
     selectedValue: string
   } = $props()
+
+  $effect(() => {
+    if (selectedValue) {
+      value = selectedValue
+    }
+  })
 </script>
 
 <div class="input-group">
   <label for={id}>{label}</label>
   <select class="select-control" bind:value={selectedValue}>
     {#each options as option}
-      <option value={option}>{option}</option>
+      <option value={option}>{option.substring(0, 180)}</option>
     {/each}
   </select>
   <textarea {id} bind:value {placeholder} {rows}></textarea>

@@ -321,6 +321,10 @@
   }
 
   async function handleSubmit() {
+    if (qualityValue && !qualityValues.includes(qualityValue)) {
+      qualityValues = [...qualityValues, qualityValue]
+    }
+    selectedQualityValue = qualityValue
     // Save current settings to localStorage on generation
     if (selectedCheckpoint) {
       localStorage.setItem('selectedCheckpoint', selectedCheckpoint)
