@@ -305,6 +305,14 @@
   }
 
   async function handleSubmit() {
+    // Save current settings to localStorage on generation
+    if (selectedCheckpoint) {
+      localStorage.setItem('selectedCheckpoint', selectedCheckpoint)
+    }
+    localStorage.setItem('promptValue', promptValue)
+    localStorage.setItem('useUpscale', JSON.stringify(useUpscale))
+    localStorage.setItem('useFaceDetailer', JSON.stringify(useFaceDetailer))
+
     if (!promptValue.trim()) {
       console.log('Prompt is empty')
       return
@@ -440,10 +448,22 @@
   }
 
   onMount(async () => {
+    // Load saved state from localStorage
+    promptValue = localStorage.getItem('promptValue') || ''
+    const savedUpscale = localStorage.getItem('useUpscale')
+    useUpscale = savedUpscale !== null ? JSON.parse(savedUpscale) : true
+    const savedFaceDetailer = localStorage.getItem('useFaceDetailer')
+    useFaceDetailer = savedFaceDetailer !== null ? JSON.parse(savedFaceDetailer) : true
+
     const checkpoints = await fetchCheckpoints()
     if (checkpoints && checkpoints.length > 0) {
       availableCheckpoints = checkpoints
-      selectedCheckpoint = checkpoints[0] // Default to the first checkpoint
+      const lastSelected = localStorage.getItem('selectedCheckpoint')
+      if (lastSelected && checkpoints.includes(lastSelected)) {
+        selectedCheckpoint = lastSelected
+      } else {
+        selectedCheckpoint = checkpoints[0] // Default to the first checkpoint
+      }
     } else {
       availableCheckpoints = []
       selectedCheckpoint = null
@@ -452,12 +472,14 @@
   })
 </script>
 
-{#if imageUrl}
-  <div class="image-container">
+<div class="image-container">
+  {#if imageUrl}
     <img src={imageUrl} alt={`Generated image for prompt: ${promptValue || 'current prompt'}`} />
-    <progress value={progressData.value} max={progressData.max}></progress>
-  </div>
-{/if}
+  {:else}
+    <div class="image-placeholder"></div>
+  {/if}
+  <progress value={progressData.value} max={progressData.max}></progress>
+</div>
 
 <div class="prompt-container">
   <textarea
@@ -539,6 +561,16 @@
     max-height: 1100px; /* Or whatever max height you prefer */
     border-radius: 4px;
     display: block;
+  }
+
+  .image-placeholder {
+    width: 832px;
+    max-width: 100%;
+    height: 1216px;
+    max-height: 1100px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
   }
 
   .image-container progress {
