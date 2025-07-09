@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte'
+  import TextAreaInput from './TextAreaInput.svelte'
 
   let isLoading: boolean = $state(false)
   let imageUrl: string | null = $state(null)
@@ -491,37 +492,41 @@
 
 <div class="content-wrapper">
   <div class="input-container">
-    <label for="quality-prompt">Quality</label>
-    <textarea
+    <TextAreaInput
       id="quality-prompt"
+      label="Quality"
       bind:value={qualityValue}
       placeholder="Enter quality details..."
-      rows="10"
-    ></textarea>
-    <label for="character-prompt">Character</label>
-    <textarea
+      rows={5}
+    />
+    <TextAreaInput
       id="character-prompt"
+      label="Character"
       bind:value={characterValue}
-      placeholder="Enter character details..."
-      rows="10"
-    ></textarea>
-    <label for="outfit-prompt">Outfit</label>
-    <textarea
+      placeholder="Describe the character..."
+      rows={5}
+    />
+    <TextAreaInput
       id="outfit-prompt"
+      label="Outfit"
       bind:value={outfitValue}
-      placeholder="Enter outfit details..."
-      rows="10"
-    ></textarea>
-    <label for="pose-prompt">Pose</label>
-    <textarea id="pose-prompt" bind:value={poseValue} placeholder="Enter pose details..." rows="10"
-    ></textarea>
-    <label for="backgrounds-prompt">Backgrounds</label>
-    <textarea
+      placeholder="Describe the outfit..."
+      rows={5}
+    />
+    <TextAreaInput
+      id="pose-prompt"
+      label="Pose"
+      bind:value={poseValue}
+      placeholder="Describe the pose..."
+      rows={5}
+    />
+    <TextAreaInput
       id="backgrounds-prompt"
+      label="Backgrounds"
       bind:value={backgroundsValue}
-      placeholder="Enter backgrounds details..."
-      rows="10"
-    ></textarea>
+      placeholder="Describe the background..."
+      rows={5}
+    />
   </div>
   <div class="image-container">
     <div class="image-display">
@@ -570,17 +575,6 @@
     width: 100%;
   }
 
-  textarea {
-    width: 100%;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-size: 16px;
-    resize: vertical; /* Allow vertical resizing, disable horizontal */
-    box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
-    background-color: #fff;
-  }
-
   button {
     padding: 10px 15px;
     background-color: #007bff;
@@ -622,25 +616,6 @@
     gap: 5px;
     flex-grow: 1;
     max-width: 400px; /* Or adjust as needed */
-  }
-
-  .input-container label {
-    font-weight: bold;
-    font-size: 16px;
-    width: 100%;
-    text-align: left;
-  }
-
-  .input-container textarea {
-    width: 100%;
-    height: 200px; /* Adjust height as needed */
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    resize: vertical;
-    box-sizing: border-box;
-    background-color: #fff;
   }
 
   .image-container img {
