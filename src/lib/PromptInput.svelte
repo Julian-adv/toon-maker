@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
 
   let promptValue: string = $state('')
   let isLoading: boolean = $state(false)
@@ -11,6 +11,8 @@
   let useUpscale: boolean = $state(true)
   let useFaceDetailer: boolean = $state(true)
   let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
+  let availableCheckpoints: string[] = $state([])
+  let selectedCheckpoint: string | null = $state(null)
 
   const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
@@ -346,6 +348,14 @@
     }
 
     workflow['11'].inputs.text = promptValue
+
+    // Dynamically set the checkpoint in the workflow for this specific submission
+    if (selectedCheckpoint) {
+      workflow['10'].inputs.ckpt_name = selectedCheckpoint
+    } else {
+      // Fallback or error handling if no checkpoint is selected
+      console.error('No checkpoint selected. Using the default checkpoint defined in workflow.')
+    }
     // Apply random seed to relevant KSamplers
     workflow['8'].inputs.seed = Math.floor(Math.random() * 10000000000000000) // KSampler 1
     if (workflow['17']) {
@@ -401,6 +411,45 @@
       URL.revokeObjectURL(imageUrl)
     }
   })
+
+  async function fetchCheckpoints() {
+    try {
+      const response = await fetch('http://127.0.0.1:8188/object_info/CheckpointLoaderSimple')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json()
+      if (
+        data &&
+        data.CheckpointLoaderSimple &&
+        data.CheckpointLoaderSimple.input &&
+        data.CheckpointLoaderSimple.input.required &&
+        data.CheckpointLoaderSimple.input.required.ckpt_name
+      ) {
+        const checkpoints = data.CheckpointLoaderSimple.input.required.ckpt_name[0]
+        console.log('Available checkpoints:', checkpoints)
+        return checkpoints
+      } else {
+        console.error('Could not find checkpoints in API response:', data)
+        return []
+      }
+    } catch (error) {
+      console.error('Error fetching checkpoints:', error)
+      return []
+    }
+  }
+
+  onMount(async () => {
+    const checkpoints = await fetchCheckpoints()
+    if (checkpoints && checkpoints.length > 0) {
+      availableCheckpoints = checkpoints
+      selectedCheckpoint = checkpoints[0] // Default to the first checkpoint
+    } else {
+      availableCheckpoints = []
+      selectedCheckpoint = null
+    }
+    // ...
+  })
 </script>
 
 {#if imageUrl}
@@ -426,6 +475,16 @@
       <input type="checkbox" bind:checked={useFaceDetailer} />
       Apply Face Detailer
     </label>
+    {#if availableCheckpoints.length > 0}
+      <div class="select-container">
+        <label for="checkpoint-select">Checkpoint:</label>
+        <select id="checkpoint-select" bind:value={selectedCheckpoint}>
+          {#each availableCheckpoints as checkpoint}
+            <option value={checkpoint}>{checkpoint}</option>
+          {/each}
+        </select>
+      </div>
+    {/if}
     <button onclick={handleSubmit} disabled={isLoading}>
       {isLoading ? 'Generating...' : 'Generate'}
     </button>
@@ -513,6 +572,25 @@
     width: 100%;
     justify-content: center; /* Center checkboxes */
     align-items: center;
+  }
+
+  .select-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .select-container label {
+    white-space: nowrap; /* Prevent label text from wrapping */
+  }
+
+  .select-container select {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    font-size: 14px;
+    min-width: 200px; /* Adjust as needed */
   }
 
   .options-container label {
