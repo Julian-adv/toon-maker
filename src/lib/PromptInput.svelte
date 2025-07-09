@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte'
 
-  let promptValue: string = $state('')
   let isLoading: boolean = $state(false)
   let imageUrl: string | null = $state(null)
   let currentPromptId: string | null = $state(null)
@@ -319,9 +318,13 @@
     localStorage.setItem('outfitValue', outfitValue)
     localStorage.setItem('poseValue', poseValue)
     localStorage.setItem('backgroundsValue', backgroundsValue)
-    localStorage.setItem('promptValue', promptValue)
     localStorage.setItem('useUpscale', JSON.stringify(useUpscale))
     localStorage.setItem('useFaceDetailer', JSON.stringify(useFaceDetailer))
+
+    const promptParts = [qualityValue, characterValue, outfitValue, poseValue, backgroundsValue]
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0)
+    let promptValue = promptParts.join(', ')
 
     if (!promptValue.trim()) {
       console.log('Prompt is empty')
@@ -410,7 +413,6 @@
           console.error('Prompt ID not found in response:', responseData)
           isLoading = false
         }
-        // promptValue = ''; // Clear input after successful queueing, or wait for image?
       }
     } catch (error) {
       console.error('Failed to send prompt to ComfyUI:', error)
@@ -459,7 +461,6 @@
 
   onMount(async () => {
     // Load saved state from localStorage
-    promptValue = localStorage.getItem('promptValue') || ''
     const savedUpscale = localStorage.getItem('useUpscale')
     useUpscale = savedUpscale !== null ? JSON.parse(savedUpscale) : true
     const savedFaceDetailer = localStorage.getItem('useFaceDetailer')
@@ -489,7 +490,7 @@
 </script>
 
 <div class="content-wrapper">
-  <div class="quality-input-container">
+  <div class="input-container">
     <label for="quality-prompt">Quality</label>
     <textarea
       id="quality-prompt"
@@ -525,10 +526,7 @@
   <div class="image-container">
     <div class="image-display">
       {#if imageUrl}
-        <img
-          src={imageUrl}
-          alt={`Generated image for prompt: ${promptValue || 'current prompt'}`}
-        />
+        <img src={imageUrl} alt="Generated art from prompt" />
       {:else}
         <div class="image-placeholder"></div>
       {/if}
@@ -570,7 +568,6 @@
     gap: 10px;
     max-width: 1000px;
     width: 100%;
-    margin: 20px auto;
   }
 
   textarea {
@@ -619,22 +616,22 @@
     flex-shrink: 0; /* Prevent image from shrinking */
   }
 
-  .quality-input-container {
+  .input-container {
     display: flex;
     flex-direction: column;
     gap: 5px;
     flex-grow: 1;
-    max-width: 300px; /* Or adjust as needed */
+    max-width: 400px; /* Or adjust as needed */
   }
 
-  .quality-input-container label {
+  .input-container label {
     font-weight: bold;
     font-size: 16px;
     width: 100%;
     text-align: left;
   }
 
-  .quality-input-container textarea {
+  .input-container textarea {
     width: 100%;
     height: 200px; /* Adjust height as needed */
     padding: 10px;
@@ -648,7 +645,7 @@
 
   .image-container img {
     max-width: 100%;
-    max-height: 1100px; /* Or whatever max height you prefer */
+    max-height: 1200px; /* Or whatever max height you prefer */
     border-radius: 4px;
     display: block;
   }
