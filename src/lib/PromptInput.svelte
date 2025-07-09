@@ -320,9 +320,62 @@
     }
   }
 
+  onMount(async () => {
+    try {
+      const response = await fetch('/api/prompts')
+      if (response.ok) {
+        const data = await response.json()
+        qualityValues = data
+        // Optionally, set the initial selected value if the list is not empty
+        if (data.length > 0) {
+          selectedQualityValue = data[0] // Or some other logic
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load quality values:', error)
+    }
+
+    // Generate a unique client ID for this session
+    clientId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+
+    // Load settings from localStorage
+    const savedCheckpoint = localStorage.getItem('selectedCheckpoint')
+    if (savedCheckpoint) {
+      selectedCheckpoint = savedCheckpoint
+    }
+    qualityValue = localStorage.getItem('qualityValue') || ''
+    characterValue = localStorage.getItem('characterValue') || ''
+    outfitValue = localStorage.getItem('outfitValue') || ''
+    poseValue = localStorage.getItem('poseValue') || ''
+    backgroundsValue = localStorage.getItem('backgroundsValue') || ''
+    const savedUpscale = localStorage.getItem('useUpscale')
+    if (savedUpscale) {
+      useUpscale = JSON.parse(savedUpscale)
+    }
+    const savedFaceDetailer = localStorage.getItem('useFaceDetailer')
+    if (savedFaceDetailer) {
+      useFaceDetailer = JSON.parse(savedFaceDetailer)
+    }
+  })
+
+  async function saveQualityValues() {
+    try {
+      await fetch('/api/prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ qualityValues })
+      })
+    } catch (error) {
+      console.error('Failed to save quality values:', error)
+    }
+  }
+
   async function handleSubmit() {
     if (qualityValue && !qualityValues.includes(qualityValue)) {
       qualityValues = [...qualityValues, qualityValue]
+      saveQualityValues() // Save to server
     }
     selectedQualityValue = qualityValue
     // Save current settings to localStorage on generation
