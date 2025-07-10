@@ -605,13 +605,11 @@
     />
   </div>
   <div class="image-container">
-    <div class="image-display">
-      {#if imageUrl}
-        <img src={imageUrl} alt="Generated art from prompt" />
-      {:else}
-        <div class="image-placeholder"></div>
-      {/if}
-    </div>
+    {#if imageUrl}
+      <img src={imageUrl} alt="Generated art from prompt" />
+    {:else}
+      <div class="image-placeholder"></div>
+    {/if}
     <progress value={progressData.value} max={progressData.max}></progress>
   </div>
 </div>
@@ -670,6 +668,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    flex-grow: 1;
+    flex-shrink: 0;
   }
 
   .content-wrapper {
@@ -682,30 +682,24 @@
     padding: 20px;
   }
 
-  .image-display {
-    flex-shrink: 0; /* Prevent image from shrinking */
-  }
-
   .input-container {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    flex-grow: 1;
-    max-width: 400px; /* Or adjust as needed */
   }
 
   .image-container img {
     max-width: 100%;
-    max-height: 1200px; /* Or whatever max height you prefer */
+    max-height: 1200px;
     border-radius: 4px;
     display: block;
   }
 
   .image-placeholder {
     width: 832px;
-    max-width: 100%;
     height: 1216px;
-    max-height: 1100px;
+    max-width: 100%;
+    max-height: 1200px;
     border-radius: 4px;
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
