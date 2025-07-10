@@ -325,75 +325,102 @@
       const response = await fetch('/api/prompts')
       if (response.ok) {
         const data = await response.json()
-        qualityValues = data
-        // Optionally, set the initial selected value if the list is not empty
-        if (data.length > 0) {
-          selectedQualityValue = data[0] // Or some other logic
-        }
+        qualityValues = data.qualityValues || []
+        characterValues = data.characterValues || []
+        outfitValues = data.outfitValues || []
+        poseValues = data.poseValues || []
+        backgroundsValues = data.backgroundsValues || []
+        selectedCheckpoint = data.selectedCheckpoint
+        useUpscale = data.useUpscale
+        useFaceDetailer = data.useFaceDetailer
+        qualityValue = data.qualityValue || ''
+        characterValue = data.characterValue || ''
+        outfitValue = data.outfitValue || ''
+        poseValue = data.poseValue || ''
+        backgroundsValue = data.backgroundsValue || ''
+
+        selectedQualityValue = qualityValue
+        selectedCharacterValue = characterValue
+        selectedOutfitValue = outfitValue
+        selectedPoseValue = poseValue
+        selectedBackgroundsValue = backgroundsValue
       }
     } catch (error) {
-      console.error('Failed to load quality values:', error)
+      console.error('Failed to load prompts from server:', error)
     }
-
-    // Generate a unique client ID for this session
-    clientId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-
-    // Load settings from localStorage
-    const savedCheckpoint = localStorage.getItem('selectedCheckpoint')
-    if (savedCheckpoint) {
-      selectedCheckpoint = savedCheckpoint
-    }
-    qualityValue = localStorage.getItem('qualityValue') || ''
-    characterValue = localStorage.getItem('characterValue') || ''
-    outfitValue = localStorage.getItem('outfitValue') || ''
-    poseValue = localStorage.getItem('poseValue') || ''
-    backgroundsValue = localStorage.getItem('backgroundsValue') || ''
-    const savedUpscale = localStorage.getItem('useUpscale')
-    if (savedUpscale) {
-      useUpscale = JSON.parse(savedUpscale)
-    }
-    const savedFaceDetailer = localStorage.getItem('useFaceDetailer')
-    if (savedFaceDetailer) {
-      useFaceDetailer = JSON.parse(savedFaceDetailer)
+    const checkpoints = await fetchCheckpoints()
+    if (checkpoints && checkpoints.length > 0) {
+      availableCheckpoints = checkpoints
+      const lastSelected = localStorage.getItem('selectedCheckpoint')
+      if (lastSelected && checkpoints.includes(lastSelected)) {
+        selectedCheckpoint = lastSelected
+      } else {
+        selectedCheckpoint = checkpoints[0] // Default to the first checkpoint
+      }
+    } else {
+      availableCheckpoints = []
+      selectedCheckpoint = null
     }
   })
 
-  async function saveQualityValues() {
+  async function savePrompts() {
+    const dataToSave = {
+      qualityValues,
+      characterValues,
+      outfitValues,
+      poseValues,
+      backgroundsValues,
+      selectedCheckpoint,
+      useUpscale,
+      useFaceDetailer,
+      qualityValue,
+      characterValue,
+      outfitValue,
+      poseValue,
+      backgroundsValue
+    }
     try {
       await fetch('/api/prompts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ qualityValues })
+        body: JSON.stringify(dataToSave)
       })
     } catch (error) {
-      console.error('Failed to save quality values:', error)
+      console.error('Failed to save prompts:', error)
     }
   }
 
   async function handleSubmit() {
     if (qualityValue && !qualityValues.includes(qualityValue)) {
       qualityValues = [...qualityValues, qualityValue]
-      saveQualityValues() // Save to server
     }
-    selectedQualityValue = qualityValue
-    // Save current settings to localStorage on generation
-    if (selectedCheckpoint) {
-      localStorage.setItem('selectedCheckpoint', selectedCheckpoint)
+    if (characterValue && !characterValues.includes(characterValue)) {
+      characterValues = [...characterValues, characterValue]
     }
-    localStorage.setItem('qualityValue', qualityValue)
-    localStorage.setItem('characterValue', characterValue)
-    localStorage.setItem('outfitValue', outfitValue)
-    localStorage.setItem('poseValue', poseValue)
-    localStorage.setItem('backgroundsValue', backgroundsValue)
-    localStorage.setItem('useUpscale', JSON.stringify(useUpscale))
-    localStorage.setItem('useFaceDetailer', JSON.stringify(useFaceDetailer))
+    if (outfitValue && !outfitValues.includes(outfitValue)) {
+      outfitValues = [...outfitValues, outfitValue]
+    }
+    if (poseValue && !poseValues.includes(poseValue)) {
+      poseValues = [...poseValues, poseValue]
+    }
+    if (backgroundsValue && !backgroundsValues.includes(backgroundsValue)) {
+      backgroundsValues = [...backgroundsValues, backgroundsValue]
+    }
 
-    const promptParts = [qualityValue, characterValue, outfitValue, poseValue, backgroundsValue]
+    savePrompts() // Save all updated values to the server
+
+    selectedQualityValue = qualityValue
+    selectedCharacterValue = characterValue
+    selectedOutfitValue = outfitValue
+    selectedPoseValue = poseValue
+    selectedBackgroundsValue = backgroundsValue
+
+    let promptValue = [qualityValue, characterValue, outfitValue, poseValue, backgroundsValue]
       .map((s) => s.trim())
       .filter((s) => s.length > 0)
-    let promptValue = promptParts.join(', ')
+      .join(', ')
 
     if (!promptValue.trim()) {
       console.log('Prompt is empty')
@@ -527,35 +554,6 @@
       return []
     }
   }
-
-  onMount(async () => {
-    // Load saved state from localStorage
-    const savedUpscale = localStorage.getItem('useUpscale')
-    useUpscale = savedUpscale !== null ? JSON.parse(savedUpscale) : true
-    const savedFaceDetailer = localStorage.getItem('useFaceDetailer')
-    useFaceDetailer = savedFaceDetailer !== null ? JSON.parse(savedFaceDetailer) : true
-
-    qualityValue = localStorage.getItem('qualityValue') || ''
-    characterValue = localStorage.getItem('characterValue') || ''
-    outfitValue = localStorage.getItem('outfitValue') || ''
-    poseValue = localStorage.getItem('poseValue') || ''
-    backgroundsValue = localStorage.getItem('backgroundsValue') || ''
-
-    const checkpoints = await fetchCheckpoints()
-    if (checkpoints && checkpoints.length > 0) {
-      availableCheckpoints = checkpoints
-      const lastSelected = localStorage.getItem('selectedCheckpoint')
-      if (lastSelected && checkpoints.includes(lastSelected)) {
-        selectedCheckpoint = lastSelected
-      } else {
-        selectedCheckpoint = checkpoints[0] // Default to the first checkpoint
-      }
-    } else {
-      availableCheckpoints = []
-      selectedCheckpoint = null
-    }
-    // ...
-  })
 </script>
 
 <div class="content-wrapper">

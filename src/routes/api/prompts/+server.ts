@@ -3,7 +3,7 @@ import fs from 'fs/promises'
 import path from 'path'
 
 const dataDir = path.resolve(process.cwd(), 'data')
-const filePath = path.join(dataDir, 'qualityValues.json')
+const filePath = path.join(dataDir, 'prompts.json')
 
 // Ensure the data directory exists
 async function ensureDir() {
@@ -16,10 +16,10 @@ async function ensureDir() {
 
 export async function POST({ request }) {
   await ensureDir()
-  const { qualityValues } = await request.json()
+  const data = await request.json()
 
   try {
-    await fs.writeFile(filePath, JSON.stringify(qualityValues, null, 2))
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2))
     return json({ success: true })
   } catch (error) {
     console.error('Error writing to file:', error)
@@ -33,9 +33,23 @@ export async function GET() {
     const data = await fs.readFile(filePath, 'utf-8')
     return json(JSON.parse(data))
   } catch (error) {
-    // If the file doesn't exist, return an empty array
+    // If the file doesn't exist, return a default structure
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return json([])
+      return json({
+        qualityValues: [],
+        characterValues: [],
+        outfitValues: [],
+        poseValues: [],
+        backgroundsValues: [],
+        selectedCheckpoint: null,
+        useUpscale: true,
+        useFaceDetailer: true,
+        qualityValue: '',
+        characterValue: '',
+        outfitValue: '',
+        poseValue: '',
+        backgroundsValue: ''
+      })
     }
     console.error('Error reading file:', error)
     return json({ error: 'Failed to read data' }, { status: 500 })
