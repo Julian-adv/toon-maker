@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte'
   import TextAreaInput from './TextAreaInput.svelte'
+  import { savePrompts, saveImage, loadPrompts } from './utils/fileIO'
 
   let isLoading: boolean = $state(false)
   let imageUrl: string | null = $state(null)
@@ -321,76 +322,39 @@
   }
 
   onMount(async () => {
-    try {
-      const response = await fetch('/api/prompts')
-      if (response.ok) {
-        const data = await response.json()
-        qualityValues = data.qualityValues || []
-        characterValues = data.characterValues || []
-        outfitValues = data.outfitValues || []
-        poseValues = data.poseValues || []
-        backgroundsValues = data.backgroundsValues || []
-        selectedCheckpoint = data.selectedCheckpoint
-        useUpscale = data.useUpscale
-        useFaceDetailer = data.useFaceDetailer
-        qualityValue = data.qualityValue || ''
-        characterValue = data.characterValue || ''
-        outfitValue = data.outfitValue || ''
-        poseValue = data.poseValue || ''
-        backgroundsValue = data.backgroundsValue || ''
+    const data = await loadPrompts()
+    if (data) {
+      qualityValues = data.qualityValues
+      characterValues = data.characterValues
+      outfitValues = data.outfitValues
+      poseValues = data.poseValues
+      backgroundsValues = data.backgroundsValues
+      selectedCheckpoint = data.selectedCheckpoint
+      useUpscale = data.useUpscale
+      useFaceDetailer = data.useFaceDetailer
+      qualityValue = data.qualityValue
+      characterValue = data.characterValue
+      outfitValue = data.outfitValue
+      poseValue = data.poseValue
+      backgroundsValue = data.backgroundsValue
 
-        selectedQualityValue = qualityValue
-        selectedCharacterValue = characterValue
-        selectedOutfitValue = outfitValue
-        selectedPoseValue = poseValue
-        selectedBackgroundsValue = backgroundsValue
-      }
-    } catch (error) {
-      console.error('Failed to load prompts from server:', error)
+      selectedQualityValue = qualityValue
+      selectedCharacterValue = characterValue
+      selectedOutfitValue = outfitValue
+      selectedPoseValue = poseValue
+      selectedBackgroundsValue = backgroundsValue
     }
     const checkpoints = await fetchCheckpoints()
     if (checkpoints && checkpoints.length > 0) {
       availableCheckpoints = checkpoints
-      const lastSelected = localStorage.getItem('selectedCheckpoint')
-      if (lastSelected && checkpoints.includes(lastSelected)) {
-        selectedCheckpoint = lastSelected
-      } else {
-        selectedCheckpoint = checkpoints[0] // Default to the first checkpoint
+      if (!selectedCheckpoint || !checkpoints.includes(selectedCheckpoint)) {
+        selectedCheckpoint = checkpoints[0] // Default to the first checkpoint if invalid or not set
       }
     } else {
       availableCheckpoints = []
       selectedCheckpoint = null
     }
   })
-
-  async function savePrompts() {
-    const dataToSave = {
-      qualityValues,
-      characterValues,
-      outfitValues,
-      poseValues,
-      backgroundsValues,
-      selectedCheckpoint,
-      useUpscale,
-      useFaceDetailer,
-      qualityValue,
-      characterValue,
-      outfitValue,
-      poseValue,
-      backgroundsValue
-    }
-    try {
-      await fetch('/api/prompts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSave)
-      })
-    } catch (error) {
-      console.error('Failed to save prompts:', error)
-    }
-  }
 
   async function handleSubmit() {
     if (qualityValue && !qualityValues.includes(qualityValue)) {
@@ -409,7 +373,21 @@
       backgroundsValues = [...backgroundsValues, backgroundsValue]
     }
 
-    savePrompts() // Save all updated values to the server
+    savePrompts({
+      qualityValues,
+      characterValues,
+      outfitValues,
+      poseValues,
+      backgroundsValues,
+      selectedCheckpoint,
+      useUpscale,
+      useFaceDetailer,
+      qualityValue,
+      characterValue,
+      outfitValue,
+      poseValue,
+      backgroundsValue
+    }) // Save all updated values to the server
 
     selectedQualityValue = qualityValue
     selectedCharacterValue = characterValue
@@ -527,21 +505,6 @@
       URL.revokeObjectURL(imageUrl)
     }
   })
-
-  async function saveImage(imageBlob: Blob) {
-    try {
-      const response = await fetch('/api/save-image', {
-        method: 'POST',
-        body: imageBlob
-      })
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error('Failed to save image:', errorData.error)
-      }
-    } catch (error) {
-      console.error('Error saving image:', error)
-    }
-  }
 
   async function fetchCheckpoints() {
     try {
