@@ -42,7 +42,7 @@ export async function loadPrompts(): Promise<PromptsData | null> {
   }
 }
 
-export async function saveImage(imageBlob: Blob, prompt?: string): Promise<void> {
+export async function saveImage(imageBlob: Blob, prompt?: string): Promise<string | null> {
   try {
     let response: Response
     
@@ -67,15 +67,20 @@ export async function saveImage(imageBlob: Blob, prompt?: string): Promise<void>
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Failed to save image:', errorData.error);
+      return null
     } else {
       const result = await response.json();
       console.log('Image saved successfully:', result.filePath);
       if (result.prompt) {
         console.log('Prompt metadata added:', result.prompt);
       }
+      // Extract filename from path
+      const fileName = result.filePath.split('/').pop() || result.filePath.split('\\').pop()
+      return fileName || null
     }
   } catch (error) {
     console.error('Error saving image:', error);
+    return null
   }
 }
 

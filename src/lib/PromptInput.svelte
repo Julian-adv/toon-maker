@@ -19,6 +19,10 @@
   let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
   let availableCheckpoints: string[] = $state([])
   let currentPromptText: string = ''
+  
+  // Image navigation state
+  let imageHistory: string[] = $state([]) // Array of filenames
+  let currentImageIndex: number = $state(-1) // Index in imageHistory
 
   let promptsData: PromptsData = $state({
     qualityValues: [],
@@ -187,12 +191,17 @@
             onProgressUpdate: (progress) => {
               progressData = progress
             },
-            onImageReceived: (imageBlob) => {
-              if (imageUrl) {
-                URL.revokeObjectURL(imageUrl)
+            onImageReceived: async (imageBlob) => {
+              const fileName = await saveImage(imageBlob, currentPromptText)
+              if (fileName) {
+                addImageToHistory(fileName)
+              } else {
+                // Fallback to blob URL if save failed
+                if (imageUrl && imageUrl.startsWith('blob:')) {
+                  URL.revokeObjectURL(imageUrl)
+                }
+                imageUrl = URL.createObjectURL(imageBlob)
               }
-              imageUrl = URL.createObjectURL(imageBlob)
-              saveImage(imageBlob, currentPromptText)
             }
           }
 
@@ -217,8 +226,41 @@
   }
 
   // Cleanup on component destroy
-  onDestroy(() => {
+  // Navigation functions
+  function goToPreviousImage() {
+    if (currentImageIndex > 0) {
+      currentImageIndex--
+      const fileName = imageHistory[currentImageIndex]
+      updateImageUrl(fileName)
+    }
+  }
+
+  function goToNextImage() {
+    if (currentImageIndex < imageHistory.length - 1) {
+      currentImageIndex++
+      const fileName = imageHistory[currentImageIndex]
+      updateImageUrl(fileName)
+    }
+  }
+
+  function updateImageUrl(fileName: string) {
     if (imageUrl) {
+      URL.revokeObjectURL(imageUrl)
+    }
+    imageUrl = `/api/image?path=${encodeURIComponent(fileName)}`
+  }
+
+  function addImageToHistory(fileName: string) {
+    // Remove any images after current index (when navigating back and generating new)
+    imageHistory = imageHistory.slice(0, currentImageIndex + 1)
+    // Add new image
+    imageHistory.push(fileName)
+    currentImageIndex = imageHistory.length - 1
+    updateImageUrl(fileName)
+  }
+
+  onDestroy(() => {
+    if (imageUrl && imageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(imageUrl)
     }
   })
@@ -273,11 +315,48 @@
     />
   </div>
   <div class="image-container">
-    {#if imageUrl}
-      <img src={imageUrl} alt="Generated art from prompt" />
-    {:else}
-      <div class="image-placeholder"></div>
-    {/if}
+    <div class="image-wrapper">
+      {#if imageUrl}
+        <img src={imageUrl} alt="Generated art from prompt" />
+      {:else}
+        <div class="image-placeholder"></div>
+      {/if}
+      <button
+        class="nav-button nav-left"
+        onclick={goToPreviousImage}
+        disabled={currentImageIndex <= 0}
+        aria-label="Previous image"
+      >
+        <!-- https://icon-sets.iconify.design/lucide/ -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+          ><path
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M18 15h-6v4l-7-7l7-7v4h6z"
+          /></svg
+        >
+      </button>
+      <button
+        class="nav-button nav-right"
+        onclick={goToNextImage}
+        disabled={currentImageIndex >= imageHistory.length - 1}
+        aria-label="Next image"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+          ><path
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 9h6V5l7 7l-7 7v-4H6z"
+          /></svg
+        >
+      </button>
+    </div>
     <progress value={progressData.value} max={progressData.max}></progress>
   </div>
 </div>
@@ -356,11 +435,57 @@
     gap: 5px;
   }
 
+  .image-wrapper {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+  }
+
   .image-container img {
     max-width: 100%;
     max-height: 1200px;
     border-radius: 4px;
     display: block;
+  }
+
+  .nav-button {
+    position: absolute;
+    bottom: 10px;
+    background-color: rgba(255, 255, 255, 0.3);
+    color: rgb(0, 0, 0, 0.2);
+    border: none;
+    border-radius: 5px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      background-color 0.3s ease,
+      opacity 0.3s ease;
+    opacity: 0.8;
+    z-index: 10;
+    padding: 4px;
+  }
+
+  .nav-button:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.9);
+    opacity: 1;
+  }
+
+  .nav-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .nav-left {
+    left: 10px;
+  }
+
+  .nav-right {
+    right: 10px;
   }
 
   .image-placeholder {
