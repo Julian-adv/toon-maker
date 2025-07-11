@@ -3,13 +3,12 @@
   import TextAreaInput from './TextAreaInput.svelte'
   import { savePrompts, saveImage, loadPrompts } from './utils/fileIO'
   import type { PromptsData } from './utils/fileIO'
+  import { fetchCheckpoints, connectWebSocket, type WebSocketCallbacks } from './utils/comfyui'
 
   let isLoading: boolean = $state(false)
   let imageUrl: string | null = $state(null)
   let currentPromptId: string | null = $state(null)
-  let ws: WebSocket | null = $state(null)
   let clientId: string = ''
-  let lastExecutingNode: string | null = $state(null) // To track the node that produces the image
   let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
   let availableCheckpoints: string[] = $state([])
 
@@ -249,75 +248,6 @@
     }
   }
 
-  function connectWebSocket(promptId: string, generatedClientId: string) {
-    if (ws) {
-      ws.close()
-    }
-    ws = new WebSocket(`ws://127.0.0.1:8188/ws?clientId=${generatedClientId}`)
-    ws.binaryType = 'arraybuffer'
-
-    ws.onopen = () => {
-      console.log('WebSocket connection established')
-    }
-
-    ws.onmessage = (event) => {
-      if (typeof event.data === 'string') {
-        const message = JSON.parse(event.data)
-        console.log('WS Message:', message)
-        if (message.type === 'executing') {
-          const data = message.data
-          if (data.prompt_id === promptId) {
-            lastExecutingNode = data.node // Store the current node being executed
-            if (data.node === null) {
-              // Execution is done for this prompt
-              console.log('Execution finished for prompt:', promptId)
-              isLoading = false
-              if (ws) ws.close()
-            }
-          }
-        } else if (message.type === 'executed') {
-          // Potentially useful for knowing when a specific node finished
-          // if (message.data.node === SAVE_IMAGE_WEBSOCKET_NODE_ID && message.data.prompt_id === promptId) {
-          //  // This means the SaveImageWebsocket node has finished sending its data.
-          // }
-        } else if (message.type === 'progress') {
-          // Handle progress updates
-          progressData.value = message.data.value
-          progressData.max = message.data.max
-        }
-      } else if (event.data instanceof ArrayBuffer) {
-        // Check if the last executing node was our SaveImageWebsocket node
-        // AND that the current prompt ID matches.
-        // console.log('Binary data received. Last executing node:', lastExecutingNode, 'Expected node ID:', FINAL_SAVE_NODE_ID, 'Current Prompt ID:', currentPromptId);
-        if (
-          lastExecutingNode === FINAL_SAVE_NODE_ID &&
-          currentPromptId /* && execution prompt_id matches */
-        ) {
-          // console.log('Image data received for current prompt and correct node');
-          const imageBlob = new Blob([event.data.slice(8)], { type: 'image/png' })
-          if (imageUrl) {
-            URL.revokeObjectURL(imageUrl) // Clean up previous object URL
-          }
-          imageUrl = URL.createObjectURL(imageBlob)
-          saveImage(imageBlob)
-          isLoading = false // Image received, stop loading
-          if (ws) ws.close() // Close WebSocket after receiving the image
-          lastExecutingNode = null // Reset for next run
-        }
-      }
-    }
-
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-      isLoading = false
-    }
-
-    ws.onclose = () => {
-      console.log('WebSocket connection closed')
-      // isLoading = false; // Might already be set by success or error
-      ws = null
-    }
-  }
 
   onMount(async () => {
     const data = await loadPrompts()
@@ -385,7 +315,6 @@
     isLoading = true
     progressData.value = 0
     progressData.max = 100 // Reset progress on new submission
-    lastExecutingNode = null
     clientId = crypto.randomUUID() // Generate a new client ID for this session
 
     console.log('Submitting prompt:', promptValue, 'Client ID:', clientId)
@@ -459,7 +388,20 @@
         console.log('Successfully queued prompt to ComfyUI:', responseData)
         if (responseData.prompt_id) {
           currentPromptId = responseData.prompt_id
-          connectWebSocket(responseData.prompt_id, clientId)
+          
+          const callbacks: WebSocketCallbacks = {
+            onLoadingChange: (loading) => { isLoading = loading },
+            onProgressUpdate: (progress) => { progressData = progress },
+            onImageReceived: (imageBlob) => {
+              if (imageUrl) {
+                URL.revokeObjectURL(imageUrl)
+              }
+              imageUrl = URL.createObjectURL(imageBlob)
+              saveImage(imageBlob)
+            }
+          }
+          
+          connectWebSocket(responseData.prompt_id, clientId, currentPromptId, FINAL_SAVE_NODE_ID, callbacks)
           // isLoading remains true until WebSocket gives image or error
         } else {
           console.error('Prompt ID not found in response:', responseData)
@@ -473,43 +415,13 @@
     // isLoading is managed by WebSocket flow now
   }
 
-  // Cleanup WebSocket on component destroy
+  // Cleanup on component destroy
   onDestroy(() => {
-    if (ws) {
-      console.log('Closing WebSocket on component destroy')
-      ws.close()
-    }
     if (imageUrl) {
       URL.revokeObjectURL(imageUrl)
     }
   })
 
-  async function fetchCheckpoints() {
-    try {
-      const response = await fetch('http://127.0.0.1:8188/object_info/CheckpointLoaderSimple')
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      const data = await response.json()
-      if (
-        data &&
-        data.CheckpointLoaderSimple &&
-        data.CheckpointLoaderSimple.input &&
-        data.CheckpointLoaderSimple.input.required &&
-        data.CheckpointLoaderSimple.input.required.ckpt_name
-      ) {
-        const checkpoints = data.CheckpointLoaderSimple.input.required.ckpt_name[0]
-        console.log('Available checkpoints:', checkpoints)
-        return checkpoints
-      } else {
-        console.error('Could not find checkpoints in API response:', data)
-        return []
-      }
-    } catch (error) {
-      console.error('Error fetching checkpoints:', error)
-      return []
-    }
-  }
 </script>
 
 <div class="content-wrapper">
