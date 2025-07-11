@@ -42,17 +42,65 @@ export async function loadPrompts(): Promise<PromptsData | null> {
   }
 }
 
-export async function saveImage(imageBlob: Blob): Promise<void> {
+export async function saveImage(imageBlob: Blob, prompt?: string): Promise<void> {
   try {
-    const response = await fetch('/api/save-image', {
-      method: 'POST',
-      body: imageBlob
-    });
+    let response: Response
+    
+    if (prompt) {
+      // Send as form data with prompt metadata
+      const formData = new FormData()
+      formData.append('image', imageBlob, 'generated-image.png')
+      formData.append('prompt', prompt)
+      
+      response = await fetch('/api/image', {
+        method: 'POST',
+        body: formData
+      })
+    } else {
+      // Send as direct blob (backward compatibility)
+      response = await fetch('/api/image', {
+        method: 'POST',
+        body: imageBlob
+      })
+    }
+    
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Failed to save image:', errorData.error);
+    } else {
+      const result = await response.json();
+      console.log('Image saved successfully:', result.filePath);
+      if (result.prompt) {
+        console.log('Prompt metadata added:', result.prompt);
+      }
     }
   } catch (error) {
     console.error('Error saving image:', error);
+  }
+}
+
+export function getImageUrl(imagePath: string): string {
+  // Extract just the filename from the path for security
+  const fileName = imagePath.split('/').pop() || imagePath.split('\\').pop() || imagePath
+  
+  // Create URL with query parameter
+  return `/api/image?path=${encodeURIComponent(fileName)}`
+}
+
+export async function getImageMetadata(imagePath: string): Promise<any> {
+  try {
+    const fileName = imagePath.split('/').pop() || imagePath.split('\\').pop() || imagePath
+    const response = await fetch(`/api/image-metadata?path=${encodeURIComponent(fileName)}`)
+    
+    if (response.ok) {
+      const result = await response.json()
+      return result.metadata
+    } else {
+      console.error('Failed to fetch image metadata')
+      return null
+    }
+  } catch (error) {
+    console.error('Error fetching image metadata:', error)
+    return null
   }
 }

@@ -1,7 +1,13 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte'
   import TextAreaInput from './TextAreaInput.svelte'
-  import { savePrompts, saveImage, loadPrompts } from './utils/fileIO'
+  import {
+    savePrompts,
+    saveImage,
+    loadPrompts,
+    getImageUrl,
+    getImageMetadata
+  } from './utils/fileIO'
   import type { PromptsData } from './utils/fileIO'
   import { fetchCheckpoints, connectWebSocket, type WebSocketCallbacks } from './utils/comfyui'
   import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './utils/workflow'
@@ -12,6 +18,7 @@
   let clientId: string = ''
   let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
   let availableCheckpoints: string[] = $state([])
+  let currentPromptText: string = ''
 
   let promptsData: PromptsData = $state({
     qualityValues: [],
@@ -28,8 +35,6 @@
     poseValue: '',
     backgroundsValue: ''
   })
-
-
 
   onMount(async () => {
     const data = await loadPrompts()
@@ -94,6 +99,10 @@
       console.log('Prompt is empty')
       return
     }
+
+    // Store current prompt for use in image saving
+    currentPromptText = promptValue
+
     isLoading = true
     progressData.value = 0
     progressData.max = 100 // Reset progress on new submission
@@ -170,20 +179,30 @@
         console.log('Successfully queued prompt to ComfyUI:', responseData)
         if (responseData.prompt_id) {
           currentPromptId = responseData.prompt_id
-          
+
           const callbacks: WebSocketCallbacks = {
-            onLoadingChange: (loading) => { isLoading = loading },
-            onProgressUpdate: (progress) => { progressData = progress },
+            onLoadingChange: (loading) => {
+              isLoading = loading
+            },
+            onProgressUpdate: (progress) => {
+              progressData = progress
+            },
             onImageReceived: (imageBlob) => {
               if (imageUrl) {
                 URL.revokeObjectURL(imageUrl)
               }
               imageUrl = URL.createObjectURL(imageBlob)
-              saveImage(imageBlob)
+              saveImage(imageBlob, currentPromptText)
             }
           }
-          
-          connectWebSocket(responseData.prompt_id, clientId, currentPromptId, FINAL_SAVE_NODE_ID, callbacks)
+
+          connectWebSocket(
+            responseData.prompt_id,
+            clientId,
+            currentPromptId,
+            FINAL_SAVE_NODE_ID,
+            callbacks
+          )
           // isLoading remains true until WebSocket gives image or error
         } else {
           console.error('Prompt ID not found in response:', responseData)
@@ -203,7 +222,6 @@
       URL.revokeObjectURL(imageUrl)
     }
   })
-
 </script>
 
 <div class="content-wrapper">
