@@ -1,50 +1,34 @@
-export interface SavePromptsData {
-  qualityValues: string[];
-  characterValues: string[];
-  outfitValues: string[];
-  poseValues: string[];
-  backgroundsValues: string[];
-  selectedCheckpoint: string | null;
-  useUpscale: boolean;
-  useFaceDetailer: boolean;
-  qualityValue: string;
-  characterValue: string;
-  outfitValue: string;
-  poseValue: string;
-  backgroundsValue: string;
+export interface PromptsData {
+	qualityValues: string[];
+	characterValues: string[];
+	outfitValues: string[];
+	poseValues: string[];
+	backgroundsValues: string[];
+	selectedCheckpoint: string | null;
+	useUpscale: boolean;
+	useFaceDetailer: boolean;
+	qualityValue: string;
+	characterValue: string;
+	outfitValue: string;
+	poseValue: string;
+	backgroundsValue: string;
 }
 
-export async function savePrompts(data: SavePromptsData): Promise<void> {
-  try {
-    await fetch('/api/prompts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-  } catch (error) {
-    console.error('Failed to save prompts:', error);
-  }
+export async function savePrompts(data: PromptsData): Promise<void> {
+	try {
+		await fetch('/api/prompts', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(data)
+		});
+	} catch (error) {
+		console.error('Failed to save prompts:', error);
+	}
 }
 
-export interface LoadedPromptsData {
-  qualityValues: string[];
-  characterValues: string[];
-  outfitValues: string[];
-  poseValues: string[];
-  backgroundsValues: string[];
-  selectedCheckpoint: string | null;
-  useUpscale: boolean;
-  useFaceDetailer: boolean;
-  qualityValue: string;
-  characterValue: string;
-  outfitValue: string;
-  poseValue: string;
-  backgroundsValue: string;
-}
-
-export async function loadPrompts(): Promise<LoadedPromptsData | null> {
+export async function loadPrompts(): Promise<PromptsData | null> {
   try {
     const response = await fetch('/api/prompts');
     if (response.ok) {

@@ -1,6 +1,7 @@
-import { json } from '@sveltejs/kit'
-import fs from 'fs/promises'
-import path from 'path'
+import { json } from '@sveltejs/kit';
+import fs from 'fs/promises';
+import path from 'path';
+import type { PromptsData } from '$lib/utils/fileIO';
 
 const dataDir = path.resolve(process.cwd(), 'data')
 const filePath = path.join(dataDir, 'prompts.json')
@@ -16,7 +17,7 @@ async function ensureDir() {
 
 export async function POST({ request }) {
   await ensureDir()
-  const data = await request.json()
+  const data: PromptsData = await request.json()
 
   try {
     await fs.writeFile(filePath, JSON.stringify(data, null, 2))
@@ -35,7 +36,7 @@ export async function GET() {
   } catch (error) {
     // If the file doesn't exist, return a default structure
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return json({
+      const defaultPrompts: PromptsData = {
         qualityValues: [],
         characterValues: [],
         outfitValues: [],
@@ -49,7 +50,8 @@ export async function GET() {
         outfitValue: '',
         poseValue: '',
         backgroundsValue: ''
-      })
+      };
+      return json(defaultPrompts);
     }
     console.error('Error reading file:', error)
     return json({ error: 'Failed to read data' }, { status: 500 })
