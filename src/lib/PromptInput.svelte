@@ -327,7 +327,10 @@
     const checkpoints = await fetchCheckpoints()
     if (checkpoints && checkpoints.length > 0) {
       availableCheckpoints = checkpoints
-      if (!promptsData.selectedCheckpoint || !checkpoints.includes(promptsData.selectedCheckpoint)) {
+      if (
+        !promptsData.selectedCheckpoint ||
+        !checkpoints.includes(promptsData.selectedCheckpoint)
+      ) {
         promptsData.selectedCheckpoint = checkpoints[0] // Default to the first checkpoint if invalid or not set
       }
     } else {
@@ -340,7 +343,10 @@
     if (promptsData.qualityValue && !promptsData.qualityValues.includes(promptsData.qualityValue)) {
       promptsData.qualityValues = [...promptsData.qualityValues, promptsData.qualityValue]
     }
-    if (promptsData.characterValue && !promptsData.characterValues.includes(promptsData.characterValue)) {
+    if (
+      promptsData.characterValue &&
+      !promptsData.characterValues.includes(promptsData.characterValue)
+    ) {
       promptsData.characterValues = [...promptsData.characterValues, promptsData.characterValue]
     }
     if (promptsData.outfitValue && !promptsData.outfitValues.includes(promptsData.outfitValue)) {
@@ -349,13 +355,25 @@
     if (promptsData.poseValue && !promptsData.poseValues.includes(promptsData.poseValue)) {
       promptsData.poseValues = [...promptsData.poseValues, promptsData.poseValue]
     }
-    if (promptsData.backgroundsValue && !promptsData.backgroundsValues.includes(promptsData.backgroundsValue)) {
-      promptsData.backgroundsValues = [...promptsData.backgroundsValues, promptsData.backgroundsValue]
+    if (
+      promptsData.backgroundsValue &&
+      !promptsData.backgroundsValues.includes(promptsData.backgroundsValue)
+    ) {
+      promptsData.backgroundsValues = [
+        ...promptsData.backgroundsValues,
+        promptsData.backgroundsValue
+      ]
     }
 
     savePrompts(promptsData) // Save all updated values to the server
 
-    let promptValue = [promptsData.qualityValue, promptsData.characterValue, promptsData.outfitValue, promptsData.poseValue, promptsData.backgroundsValue]
+    let promptValue = [
+      promptsData.qualityValue,
+      promptsData.characterValue,
+      promptsData.outfitValue,
+      promptsData.poseValue,
+      promptsData.backgroundsValue
+    ]
       .map((s) => s.trim())
       .filter((s) => s.length > 0)
       .join(', ')
@@ -566,7 +584,7 @@
       <div class="select-container">
         <label for="checkpoint-select">Checkpoint:</label>
         <select id="checkpoint-select" bind:value={promptsData.selectedCheckpoint}>
-          {#each availableCheckpoints as checkpoint}
+          {#each availableCheckpoints as checkpoint (checkpoint)}
             <option value={checkpoint}>{checkpoint}</option>
           {/each}
         </select>
