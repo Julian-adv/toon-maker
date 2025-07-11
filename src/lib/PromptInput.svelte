@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte'
   import TextAreaInput from './TextAreaInput.svelte'
   import { savePrompts, saveImage, loadPrompts } from './utils/fileIO'
+  import type { PromptsData } from './utils/fileIO'
 
   let isLoading: boolean = $state(false)
   let imageUrl: string | null = $state(null)
@@ -9,27 +10,24 @@
   let ws: WebSocket | null = $state(null)
   let clientId: string = ''
   let lastExecutingNode: string | null = $state(null) // To track the node that produces the image
-  let useUpscale: boolean = $state(true)
-  let useFaceDetailer: boolean = $state(true)
   let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
   let availableCheckpoints: string[] = $state([])
-  let selectedCheckpoint: string | null = $state(null)
-  let qualityValue: string = $state('')
-  let characterValue: string = $state('')
-  let outfitValue: string = $state('')
-  let poseValue: string = $state('')
-  let backgroundsValue: string = $state('')
 
-  let qualityValues: string[] = $state([])
-  let selectedQualityValue: string = $state('')
-  let characterValues: string[] = $state([])
-  let selectedCharacterValue: string = $state('')
-  let outfitValues: string[] = $state([])
-  let selectedOutfitValue: string = $state('')
-  let poseValues: string[] = $state([])
-  let selectedPoseValue: string = $state('')
-  let backgroundsValues: string[] = $state([])
-  let selectedBackgroundsValue: string = $state('')
+  let promptsData: PromptsData = $state({
+    qualityValues: [],
+    characterValues: [],
+    outfitValues: [],
+    poseValues: [],
+    backgroundsValues: [],
+    selectedCheckpoint: null,
+    useUpscale: true,
+    useFaceDetailer: true,
+    qualityValue: '',
+    characterValue: '',
+    outfitValue: '',
+    poseValue: '',
+    backgroundsValue: ''
+  })
 
   const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
@@ -324,78 +322,40 @@
   onMount(async () => {
     const data = await loadPrompts()
     if (data) {
-      qualityValues = data.qualityValues
-      characterValues = data.characterValues
-      outfitValues = data.outfitValues
-      poseValues = data.poseValues
-      backgroundsValues = data.backgroundsValues
-      selectedCheckpoint = data.selectedCheckpoint
-      useUpscale = data.useUpscale
-      useFaceDetailer = data.useFaceDetailer
-      qualityValue = data.qualityValue
-      characterValue = data.characterValue
-      outfitValue = data.outfitValue
-      poseValue = data.poseValue
-      backgroundsValue = data.backgroundsValue
-
-      selectedQualityValue = qualityValue
-      selectedCharacterValue = characterValue
-      selectedOutfitValue = outfitValue
-      selectedPoseValue = poseValue
-      selectedBackgroundsValue = backgroundsValue
+      promptsData = { ...promptsData, ...data }
     }
     const checkpoints = await fetchCheckpoints()
     if (checkpoints && checkpoints.length > 0) {
       availableCheckpoints = checkpoints
-      if (!selectedCheckpoint || !checkpoints.includes(selectedCheckpoint)) {
-        selectedCheckpoint = checkpoints[0] // Default to the first checkpoint if invalid or not set
+      if (!promptsData.selectedCheckpoint || !checkpoints.includes(promptsData.selectedCheckpoint)) {
+        promptsData.selectedCheckpoint = checkpoints[0] // Default to the first checkpoint if invalid or not set
       }
     } else {
       availableCheckpoints = []
-      selectedCheckpoint = null
+      promptsData.selectedCheckpoint = null
     }
   })
 
   async function handleSubmit() {
-    if (qualityValue && !qualityValues.includes(qualityValue)) {
-      qualityValues = [...qualityValues, qualityValue]
+    if (promptsData.qualityValue && !promptsData.qualityValues.includes(promptsData.qualityValue)) {
+      promptsData.qualityValues = [...promptsData.qualityValues, promptsData.qualityValue]
     }
-    if (characterValue && !characterValues.includes(characterValue)) {
-      characterValues = [...characterValues, characterValue]
+    if (promptsData.characterValue && !promptsData.characterValues.includes(promptsData.characterValue)) {
+      promptsData.characterValues = [...promptsData.characterValues, promptsData.characterValue]
     }
-    if (outfitValue && !outfitValues.includes(outfitValue)) {
-      outfitValues = [...outfitValues, outfitValue]
+    if (promptsData.outfitValue && !promptsData.outfitValues.includes(promptsData.outfitValue)) {
+      promptsData.outfitValues = [...promptsData.outfitValues, promptsData.outfitValue]
     }
-    if (poseValue && !poseValues.includes(poseValue)) {
-      poseValues = [...poseValues, poseValue]
+    if (promptsData.poseValue && !promptsData.poseValues.includes(promptsData.poseValue)) {
+      promptsData.poseValues = [...promptsData.poseValues, promptsData.poseValue]
     }
-    if (backgroundsValue && !backgroundsValues.includes(backgroundsValue)) {
-      backgroundsValues = [...backgroundsValues, backgroundsValue]
+    if (promptsData.backgroundsValue && !promptsData.backgroundsValues.includes(promptsData.backgroundsValue)) {
+      promptsData.backgroundsValues = [...promptsData.backgroundsValues, promptsData.backgroundsValue]
     }
 
-    savePrompts({
-      qualityValues,
-      characterValues,
-      outfitValues,
-      poseValues,
-      backgroundsValues,
-      selectedCheckpoint,
-      useUpscale,
-      useFaceDetailer,
-      qualityValue,
-      characterValue,
-      outfitValue,
-      poseValue,
-      backgroundsValue
-    }) // Save all updated values to the server
+    savePrompts(promptsData) // Save all updated values to the server
 
-    selectedQualityValue = qualityValue
-    selectedCharacterValue = characterValue
-    selectedOutfitValue = outfitValue
-    selectedPoseValue = poseValue
-    selectedBackgroundsValue = backgroundsValue
-
-    let promptValue = [qualityValue, characterValue, outfitValue, poseValue, backgroundsValue]
+    let promptValue = [promptsData.qualityValue, promptsData.characterValue, promptsData.outfitValue, promptsData.poseValue, promptsData.backgroundsValue]
       .map((s) => s.trim())
       .filter((s) => s.length > 0)
       .join(', ')
@@ -416,8 +376,8 @@
 
     let imageSourceNodeId: string
 
-    if (useUpscale) {
-      if (useFaceDetailer) {
+    if (promptsData.useUpscale) {
+      if (promptsData.useFaceDetailer) {
         // Upscale=true, FaceDetailer=true
         imageSourceNodeId = '22' // Output of FaceDetailer2
       } else {
@@ -426,7 +386,7 @@
       }
     } else {
       // Upscale=false
-      if (useFaceDetailer) {
+      if (promptsData.useFaceDetailer) {
         // Upscale=false, FaceDetailer=true
         imageSourceNodeId = '5' // Output of FaceDetailer1
       } else {
@@ -445,8 +405,8 @@
     workflow['11'].inputs.text = promptValue
 
     // Dynamically set the checkpoint in the workflow for this specific submission
-    if (selectedCheckpoint) {
-      workflow['10'].inputs.ckpt_name = selectedCheckpoint
+    if (promptsData.selectedCheckpoint) {
+      workflow['10'].inputs.ckpt_name = promptsData.selectedCheckpoint
     } else {
       // Fallback or error handling if no checkpoint is selected
       console.error('No checkpoint selected. Using the default checkpoint defined in workflow.')
@@ -539,47 +499,47 @@
     <TextAreaInput
       id="quality-prompt"
       label="Quality"
-      bind:value={qualityValue}
+      bind:value={promptsData.qualityValue}
       placeholder="Enter quality details..."
       rows={5}
-      options={qualityValues}
-      bind:selectedValue={selectedQualityValue}
+      options={promptsData.qualityValues}
+      bind:selectedValue={promptsData.qualityValue}
     />
     <TextAreaInput
       id="character-prompt"
       label="Character"
-      bind:value={characterValue}
+      bind:value={promptsData.characterValue}
       placeholder="Describe the character..."
       rows={5}
-      options={characterValues}
-      bind:selectedValue={selectedCharacterValue}
+      options={promptsData.characterValues}
+      bind:selectedValue={promptsData.characterValue}
     />
     <TextAreaInput
       id="outfit-prompt"
       label="Outfit"
-      bind:value={outfitValue}
+      bind:value={promptsData.outfitValue}
       placeholder="Describe the outfit..."
       rows={5}
-      options={outfitValues}
-      bind:selectedValue={selectedOutfitValue}
+      options={promptsData.outfitValues}
+      bind:selectedValue={promptsData.outfitValue}
     />
     <TextAreaInput
       id="pose-prompt"
       label="Pose"
-      bind:value={poseValue}
+      bind:value={promptsData.poseValue}
       placeholder="Describe the pose..."
       rows={5}
-      options={poseValues}
-      bind:selectedValue={selectedPoseValue}
+      options={promptsData.poseValues}
+      bind:selectedValue={promptsData.poseValue}
     />
     <TextAreaInput
       id="backgrounds-prompt"
       label="Backgrounds"
-      bind:value={backgroundsValue}
+      bind:value={promptsData.backgroundsValue}
       placeholder="Describe the background..."
       rows={5}
-      options={backgroundsValues}
-      bind:selectedValue={selectedBackgroundsValue}
+      options={promptsData.backgroundsValues}
+      bind:selectedValue={promptsData.backgroundsValue}
     />
   </div>
   <div class="image-container">
@@ -595,17 +555,17 @@
 <div class="prompt-container">
   <div class="options-container">
     <label>
-      <input type="checkbox" bind:checked={useUpscale} />
+      <input type="checkbox" bind:checked={promptsData.useUpscale} />
       Upscale Image
     </label>
     <label>
-      <input type="checkbox" bind:checked={useFaceDetailer} />
+      <input type="checkbox" bind:checked={promptsData.useFaceDetailer} />
       Apply Face Detailer
     </label>
     {#if availableCheckpoints.length > 0}
       <div class="select-container">
         <label for="checkpoint-select">Checkpoint:</label>
-        <select id="checkpoint-select" bind:value={selectedCheckpoint}>
+        <select id="checkpoint-select" bind:value={promptsData.selectedCheckpoint}>
           {#each availableCheckpoints as checkpoint}
             <option value={checkpoint}>{checkpoint}</option>
           {/each}
