@@ -90,7 +90,7 @@ export function getImageUrl(imagePath: string): string {
 export async function getImageMetadata(imagePath: string): Promise<any> {
   try {
     const fileName = imagePath.split('/').pop() || imagePath.split('\\').pop() || imagePath
-    const response = await fetch(`/api/image-metadata?path=${encodeURIComponent(fileName)}`)
+    const response = await fetch(`/api/image?path=${encodeURIComponent(fileName)}&metadata=true`)
     
     if (response.ok) {
       const result = await response.json()

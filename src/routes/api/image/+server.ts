@@ -21,6 +21,7 @@ function getFormattedDate() {
 export async function GET({ url }) {
   try {
     const imagePath = url.searchParams.get('path')
+    const metadataOnly = url.searchParams.get('metadata') === 'true'
     
     if (!imagePath) {
       return json({ error: 'Image path is required' }, { status: 400 })
@@ -42,7 +43,29 @@ export async function GET({ url }) {
       return json({ error: 'Image not found' }, { status: 404 })
     }
 
-    // Read the image file
+    // If only metadata is requested, return JSON with metadata
+    if (metadataOnly) {
+      // Extract metadata using Sharp
+      const metadata = await sharp(fullPath).metadata()
+      
+      return json({
+        success: true,
+        metadata: {
+          width: metadata.width,
+          height: metadata.height,
+          format: metadata.format,
+          size: metadata.size,
+          density: metadata.density,
+          channels: metadata.channels,
+          depth: metadata.depth,
+          hasAlpha: metadata.hasAlpha,
+          // Extract parameters from PNG text chunks (WebUI style)
+          parameters: await extractPngParameters(fullPath),
+        }
+      })
+    }
+
+    // Otherwise, serve the image file
     const imageBuffer = await fs.readFile(fullPath)
     const fileExtension = path.extname(fullPath).toLowerCase()
     
@@ -142,5 +165,30 @@ Steps: 28, Sampler: euler_ancestral, Schedule type: simple, CFG scale: 5, Seed: 
   } catch (error) {
     console.error('Error saving image:', error)
     return json({ success: false, error: 'Failed to save image' }, { status: 500 })
+  }
+}
+
+// Helper function to extract PNG parameters from text chunks
+async function extractPngParameters(filePath: string): Promise<string | null> {
+  try {
+    const imageBuffer = await fs.readFile(filePath)
+    const chunks = extractChunks(imageBuffer)
+    
+    // Look for text chunks containing parameters
+    for (const chunk of chunks) {
+      if (chunk.name === 'tEXt') {
+        try {
+          const decoded = textChunk.decode(chunk.data)
+          if (decoded.keyword === 'parameters') {
+            return decoded.text
+          }
+        } catch {
+          // Skip invalid text chunks
+        }
+      }
+    }
+    return null
+  } catch {
+    return null
   }
 }
