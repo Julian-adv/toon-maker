@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte'
   import TextAreaInput from './TextAreaInput.svelte'
   import SettingsDialog, { type Settings } from './SettingsDialog.svelte'
-  import { savePrompts, saveImage, loadPrompts, getImageList } from './utils/fileIO'
+  import { savePrompts, saveImage, loadPrompts, getImageList, loadSettings, saveSettings as saveSettingsToFile } from './utils/fileIO'
   import type { PromptsData } from './utils/fileIO'
   import { fetchCheckpoints, connectWebSocket, type WebSocketCallbacks } from './utils/comfyui'
   import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './utils/workflow'
@@ -51,6 +51,13 @@
     if (data) {
       promptsData = { ...promptsData, ...data }
     }
+
+    // Load settings
+    const savedSettings = await loadSettings()
+    if (savedSettings) {
+      settings = savedSettings
+    }
+
     const checkpoints = await fetchCheckpoints()
     if (checkpoints && checkpoints.length > 0) {
       availableCheckpoints = checkpoints
@@ -291,9 +298,17 @@
     showSettingsDialog = false
   }
 
-  function saveSettings(newSettings: Settings) {
+  async function saveSettings(newSettings: Settings) {
     settings = { ...newSettings }
-    // You could add validation or API calls here if needed
+    
+    // Save settings to file
+    const success = await saveSettingsToFile(settings)
+    if (success) {
+      console.log('Settings saved to file successfully')
+    } else {
+      console.error('Failed to save settings to file')
+    }
+    
     showSettingsDialog = false
   }
 

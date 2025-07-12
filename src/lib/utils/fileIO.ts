@@ -126,3 +126,44 @@ export async function getImageList(): Promise<string[]> {
     return []
   }
 }
+
+export async function loadSettings(): Promise<any> {
+  try {
+    const response = await fetch('/api/settings')
+    
+    if (response.ok) {
+      const result = await response.json()
+      return result.settings
+    } else {
+      console.error('Failed to fetch settings')
+      return null
+    }
+  } catch (error) {
+    console.error('Error fetching settings:', error)
+    return null
+  }
+}
+
+export async function saveSettings(settings: any): Promise<boolean> {
+  try {
+    const response = await fetch('/api/settings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    })
+    
+    if (response.ok) {
+      console.log('Settings saved successfully')
+      return true
+    } else {
+      const errorData = await response.json()
+      console.error('Failed to save settings:', errorData.error)
+      return false
+    }
+  } catch (error) {
+    console.error('Error saving settings:', error)
+    return false
+  }
+}
