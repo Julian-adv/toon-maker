@@ -1,11 +1,12 @@
 <script lang="ts">
-  interface Settings {
+  export interface Settings {
     imageWidth: number
     imageHeight: number
     cfgScale: number
     steps: number
     seed: number
     sampler: string
+    outputDirectory: string
   }
 
   interface Props {
@@ -24,7 +25,8 @@
     cfgScale: settings.cfgScale,
     steps: settings.steps,
     seed: settings.seed,
-    sampler: settings.sampler
+    sampler: settings.sampler,
+    outputDirectory: settings.outputDirectory
   })
 
   // Update local settings when props change
@@ -36,7 +38,8 @@
         cfgScale: settings.cfgScale,
         steps: settings.steps,
         seed: settings.seed,
-        sampler: settings.sampler
+        sampler: settings.sampler,
+        outputDirectory: settings.outputDirectory
       }
     }
   })
@@ -63,76 +66,78 @@
       </div>
 
       <div class="dialog-body">
-        <div class="setting-group">
-          <label for="image-width">Image Width:</label>
-          <input
-            id="image-width"
-            type="number"
-            bind:value={localSettings.imageWidth}
-            min="256"
-            max="2048"
-            step="64"
-          />
-        </div>
+        <label for="image-width" class="two-col-label">Image Width:</label>
+        <input
+          id="image-width"
+          type="number"
+          bind:value={localSettings.imageWidth}
+          min="256"
+          max="2048"
+          step="64"
+          class="two-col-input"
+        />
 
-        <div class="setting-group">
-          <label for="image-height">Image Height:</label>
-          <input
-            id="image-height"
-            type="number"
-            bind:value={localSettings.imageHeight}
-            min="256"
-            max="2048"
-            step="64"
-          />
-        </div>
+        <label for="image-height" class="two-col-label">Image Height:</label>
+        <input
+          id="image-height"
+          type="number"
+          bind:value={localSettings.imageHeight}
+          min="256"
+          max="2048"
+          step="64"
+          class="two-col-input"
+        />
 
-        <div class="setting-group">
-          <label for="cfg-scale">CFG Scale:</label>
-          <input
-            id="cfg-scale"
-            type="number"
-            bind:value={localSettings.cfgScale}
-            min="1"
-            max="20"
-            step="0.5"
-          />
-        </div>
+        <label for="cfg-scale" class="two-col-label">CFG Scale:</label>
+        <input
+          id="cfg-scale"
+          type="number"
+          bind:value={localSettings.cfgScale}
+          min="1"
+          max="20"
+          step="0.5"
+          class="two-col-input"
+        />
 
-        <div class="setting-group">
-          <label for="steps">Steps:</label>
-          <input
-            id="steps"
-            type="number"
-            bind:value={localSettings.steps}
-            min="1"
-            max="100"
-            step="1"
-          />
-        </div>
+        <label for="steps" class="two-col-label">Steps:</label>
+        <input
+          id="steps"
+          type="number"
+          bind:value={localSettings.steps}
+          min="1"
+          max="100"
+          step="1"
+          class="two-col-input"
+        />
 
-        <div class="setting-group">
-          <label for="seed">Seed (-1 for random):</label>
-          <input
-            id="seed"
-            type="number"
-            bind:value={localSettings.seed}
-            min="-1"
-            max="999999999"
-            step="1"
-          />
-        </div>
+        <label for="seed" class="two-col-label">Seed (-1 for random):</label>
+        <input
+          id="seed"
+          type="number"
+          bind:value={localSettings.seed}
+          min="-1"
+          max="999999999"
+          step="1"
+          class="two-col-input"
+        />
 
-        <div class="setting-group">
-          <label for="sampler">Sampler:</label>
-          <select id="sampler" bind:value={localSettings.sampler}>
-            <option value="euler_ancestral">Euler Ancestral</option>
-            <option value="euler">Euler</option>
-            <option value="dpmpp_2m">DPM++ 2M</option>
-            <option value="dpmpp_sde">DPM++ SDE</option>
-            <option value="ddim">DDIM</option>
-          </select>
-        </div>
+        <label for="sampler" class="two-col-label">Sampler:</label>
+        <select id="sampler" bind:value={localSettings.sampler} class="two-col-input">
+          <option value="euler_ancestral">Euler Ancestral</option>
+          <option value="euler">Euler</option>
+          <option value="dpmpp_2m">DPM++ 2M</option>
+          <option value="dpmpp_sde">DPM++ SDE</option>
+          <option value="ddim">DDIM</option>
+        </select>
+
+        <label for="output-directory" class="output-dir-label">Output Directory:</label>
+        <input
+          id="output-directory"
+          type="text"
+          bind:value={localSettings.outputDirectory}
+          placeholder="/path/to/output/directory"
+          class="output-dir-input"
+        />
       </div>
 
       <div class="dialog-footer">
@@ -162,7 +167,7 @@
     background: white;
     border-radius: 8px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    max-width: 400px;
+    max-width: 600px;
     width: 90%;
     max-height: 80vh;
     overflow: hidden;
@@ -202,37 +207,58 @@
   }
 
   .dialog-body {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 15px 20px;
     padding: 20px;
     max-height: 50vh;
     overflow-y: auto;
+    align-items: center;
   }
 
-  .setting-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-bottom: 15px;
-  }
-
-  .setting-group label {
+  .dialog-body label {
     font-weight: 500;
     color: #333;
     font-size: 14px;
+    text-align: right;
   }
 
-  .setting-group input,
-  .setting-group select {
+  .dialog-body input,
+  .dialog-body select {
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    width: 100%;
   }
 
-  .setting-group input:focus,
-  .setting-group select:focus {
+  .dialog-body input:focus,
+  .dialog-body select:focus {
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  .two-col-label {
+    grid-column: 1;
+    text-align: right;
+    justify-self: end;
+  }
+
+  .two-col-input {
+    grid-column: 2;
+  }
+
+  .output-dir-label {
+    grid-column: 1;
+    text-align: right;
+    justify-self: end;
+    margin-top: 10px;
+  }
+
+  .output-dir-input {
+    grid-column: 2 / 4;
+    margin-top: 10px;
   }
 
   .dialog-footer {

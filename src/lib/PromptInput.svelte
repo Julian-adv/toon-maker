@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte'
   import TextAreaInput from './TextAreaInput.svelte'
-  import SettingsDialog from './SettingsDialog.svelte'
+  import SettingsDialog, { type Settings } from './SettingsDialog.svelte'
   import { savePrompts, saveImage, loadPrompts, getImageList } from './utils/fileIO'
   import type { PromptsData } from './utils/fileIO'
   import { fetchCheckpoints, connectWebSocket, type WebSocketCallbacks } from './utils/comfyui'
@@ -20,13 +20,14 @@
 
   // Settings dialog state
   let showSettingsDialog: boolean = $state(false)
-  let settings = $state({
+  let settings: Settings = $state({
     imageWidth: 832,
     imageHeight: 1216,
     cfgScale: 5,
     steps: 28,
     seed: -1,
-    sampler: 'euler_ancestral'
+    sampler: 'euler_ancestral',
+    outputDirectory: 'data/output'
   })
 
   let promptsData: PromptsData = $state({
@@ -290,7 +291,7 @@
     showSettingsDialog = false
   }
 
-  function saveSettings(newSettings: typeof settings) {
+  function saveSettings(newSettings: Settings) {
     settings = { ...newSettings }
     // You could add validation or API calls here if needed
     showSettingsDialog = false
