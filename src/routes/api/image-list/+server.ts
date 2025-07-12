@@ -1,10 +1,12 @@
 import { json } from '@sveltejs/kit'
 import fs from 'fs/promises'
 import path from 'path'
+import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
 
-export async function GET() {
+export async function GET({ url }) {
   try {
-    const outputDir = path.resolve(process.cwd(), 'data', 'output')
+    const outputDirectory = url.searchParams.get('outputDirectory') || DEFAULT_OUTPUT_DIRECTORY
+    const outputDir = path.resolve(process.cwd(), outputDirectory)
     
     // Check if output directory exists
     try {

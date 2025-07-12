@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit'
 import fs from 'fs/promises'
 import path from 'path'
+import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
 
 const SETTINGS_FILE = path.resolve(process.cwd(), 'data', 'settings.json')
 
@@ -24,7 +25,7 @@ export async function GET() {
           steps: 28,
           seed: -1,
           sampler: 'euler_ancestral',
-          outputDirectory: 'data/output'
+          outputDirectory: DEFAULT_OUTPUT_DIRECTORY
         }
       })
     }

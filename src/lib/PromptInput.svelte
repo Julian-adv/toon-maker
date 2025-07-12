@@ -6,6 +6,7 @@
   import type { PromptsData } from './utils/fileIO'
   import { fetchCheckpoints, connectWebSocket, type WebSocketCallbacks } from './utils/comfyui'
   import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './utils/workflow'
+  import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
 
   let isLoading: boolean = $state(false)
   let imageUrl: string | null = $state(null)
@@ -27,7 +28,7 @@
     steps: 28,
     seed: -1,
     sampler: 'euler_ancestral',
-    outputDirectory: 'data/output'
+    outputDirectory: DEFAULT_OUTPUT_DIRECTORY
   })
 
   let promptsData: PromptsData = $state({
@@ -205,7 +206,7 @@
               progressData = progress
             },
             onImageReceived: async (imageBlob) => {
-              const fileName = await saveImage(imageBlob, currentPromptText)
+              const fileName = await saveImage(imageBlob, currentPromptText, settings.outputDirectory)
               if (fileName) {
                 setCurrentImage(fileName)
               } else {
@@ -242,7 +243,7 @@
   // Cleanup on component destroy
   // Navigation functions
   async function goToPreviousImage() {
-    const allFiles = await getImageList()
+    const allFiles = await getImageList(settings.outputDirectory)
     if (allFiles.length === 0) return
 
     if (!currentImageFileName) {
@@ -260,7 +261,7 @@
   }
 
   async function goToNextImage() {
-    const allFiles = await getImageList()
+    const allFiles = await getImageList(settings.outputDirectory)
     if (allFiles.length === 0) return
 
     if (!currentImageFileName) {
@@ -281,7 +282,7 @@
     if (imageUrl && imageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(imageUrl)
     }
-    imageUrl = `/api/image?path=${encodeURIComponent(fileName)}`
+    imageUrl = `/api/image?path=${encodeURIComponent(fileName)}&outputDirectory=${encodeURIComponent(settings.outputDirectory)}`
     currentImageFileName = fileName
   }
 

@@ -42,27 +42,18 @@ export async function loadPrompts(): Promise<PromptsData | null> {
   }
 }
 
-export async function saveImage(imageBlob: Blob, prompt?: string): Promise<string | null> {
+export async function saveImage(imageBlob: Blob, prompt: string, outputDirectory: string): Promise<string | null> {
   try {
-    let response: Response
+    // Send as form data with prompt metadata and output directory
+    const formData = new FormData()
+    formData.append('image', imageBlob, 'generated-image.png')
+    formData.append('prompt', prompt)
+    formData.append('outputDirectory', outputDirectory)
     
-    if (prompt) {
-      // Send as form data with prompt metadata
-      const formData = new FormData()
-      formData.append('image', imageBlob, 'generated-image.png')
-      formData.append('prompt', prompt)
-      
-      response = await fetch('/api/image', {
-        method: 'POST',
-        body: formData
-      })
-    } else {
-      // Send as direct blob (backward compatibility)
-      response = await fetch('/api/image', {
-        method: 'POST',
-        body: imageBlob
-      })
-    }
+    const response = await fetch('/api/image', {
+      method: 'POST',
+      body: formData
+    })
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -110,9 +101,12 @@ export async function getImageMetadata(imagePath: string): Promise<any> {
   }
 }
 
-export async function getImageList(): Promise<string[]> {
+export async function getImageList(outputDirectory: string): Promise<string[]> {
   try {
-    const response = await fetch('/api/image-list')
+    const params = new URLSearchParams()
+    params.append('outputDirectory', outputDirectory)
+    const url = '/api/image-list?' + params.toString()
+    const response = await fetch(url)
     
     if (response.ok) {
       const result = await response.json()

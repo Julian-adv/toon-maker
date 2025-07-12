@@ -5,6 +5,7 @@ import sharp from 'sharp'
 import extractChunks from 'png-chunks-extract'
 import encodeChunks from 'png-chunks-encode'
 import textChunk from 'png-chunk-text'
+import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
 
 // Function to format date as yyyy-mm-dd-HH-MM
 function getFormattedDate() {
@@ -22,13 +23,14 @@ export async function GET({ url }) {
   try {
     const imagePath = url.searchParams.get('path')
     const metadataOnly = url.searchParams.get('metadata') === 'true'
+    const outputDirectory = url.searchParams.get('outputDirectory') || DEFAULT_OUTPUT_DIRECTORY
     
     if (!imagePath) {
       return json({ error: 'Image path is required' }, { status: 400 })
     }
 
     // Security: ensure the path is within the output directory
-    const outputDir = path.resolve(process.cwd(), 'data', 'output')
+    const outputDir = path.resolve(process.cwd(), outputDirectory)
     const fullPath = path.resolve(outputDir, path.basename(imagePath))
     
     // Check if the resolved path is still within the output directory
@@ -97,16 +99,19 @@ export async function POST({ request }) {
     
     let imageBuffer: Buffer
     let promptText = ''
+    let outputDirectory = DEFAULT_OUTPUT_DIRECTORY
     
     if (contentType?.includes('multipart/form-data')) {
-      // Handle form data with prompt metadata
+      // Handle form data with prompt metadata and output directory
       const formData = await request.formData()
       const imageFile = formData.get('image') as File
       const prompt = formData.get('prompt') as string
+      const outputDir = formData.get('outputDirectory') as string
       
       if (imageFile) {
         imageBuffer = Buffer.from(await imageFile.arrayBuffer())
         promptText = prompt || ''
+        outputDirectory = outputDir || DEFAULT_OUTPUT_DIRECTORY
       } else {
         throw new Error('No image file found in form data')
       }
@@ -116,7 +121,7 @@ export async function POST({ request }) {
       imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
     }
 
-    const outputDir = path.resolve(process.cwd(), 'data', 'output')
+    const outputDir = path.resolve(process.cwd(), outputDirectory)
     await fs.mkdir(outputDir, { recursive: true })
 
     const fileName = `${getFormattedDate()}.png`
