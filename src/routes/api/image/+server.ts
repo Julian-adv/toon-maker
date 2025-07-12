@@ -6,35 +6,22 @@ import extractChunks from 'png-chunks-extract'
 import encodeChunks from 'png-chunks-encode'
 import textChunk from 'png-chunk-text'
 import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
-
-// Function to format date as yyyy-mm-dd-HH-MM
-function getFormattedDate() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const hours = String(now.getHours()).padStart(2, '0')
-  const minutes = String(now.getMinutes()).padStart(2, '0')
-  const seconds = String(now.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
-}
+import { getTodayDate, getFormattedTime } from '$lib/utils/date'
 
 export async function GET({ url }) {
   try {
     const imagePath = url.searchParams.get('path')
     const metadataOnly = url.searchParams.get('metadata') === 'true'
-    const outputDirectory = url.searchParams.get('outputDirectory') || DEFAULT_OUTPUT_DIRECTORY
     
     if (!imagePath) {
       return json({ error: 'Image path is required' }, { status: 400 })
     }
 
-    // Security: ensure the path is within the output directory
-    const outputDir = path.resolve(process.cwd(), outputDirectory)
-    const fullPath = path.resolve(outputDir, path.basename(imagePath))
+    // Use the full path directly
+    const fullPath = path.resolve(imagePath)
     
-    // Check if the resolved path is still within the output directory
-    if (!fullPath.startsWith(outputDir)) {
+    // Security: ensure the path is a real file and contains no directory traversal
+    if (imagePath.includes('..') || !path.isAbsolute(imagePath)) {
       return json({ error: 'Invalid image path' }, { status: 403 })
     }
 
@@ -121,11 +108,13 @@ export async function POST({ request }) {
       imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
     }
 
-    const outputDir = path.resolve(process.cwd(), outputDirectory)
-    await fs.mkdir(outputDir, { recursive: true })
+    const baseOutputDir = path.resolve(process.cwd(), outputDirectory)
+    const todayFolder = getTodayDate()
+    const finalOutputDir = path.join(baseOutputDir, todayFolder)
+    await fs.mkdir(finalOutputDir, { recursive: true })
 
-    const fileName = `${getFormattedDate()}.png`
-    const filePath = path.join(outputDir, fileName)
+    const fileName = `${getFormattedTime()}.png`
+    const filePath = path.join(finalOutputDir, fileName)
 
     // Add metadata to PNG if prompt is provided
     if (promptText) {

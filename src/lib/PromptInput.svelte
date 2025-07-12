@@ -17,7 +17,7 @@
   let currentPromptText: string = ''
 
   // Image navigation state
-  let currentImageFileName: string = $state('') // Current image filename
+  let currentImageFileName: string = $state('') // Current image file path
 
   // Settings dialog state
   let showSettingsDialog: boolean = $state(false)
@@ -206,16 +206,16 @@
               progressData = progress
             },
             onImageReceived: async (imageBlob) => {
-              const fileName = await saveImage(imageBlob, currentPromptText, settings.outputDirectory)
-              if (fileName) {
-                setCurrentImage(fileName)
+              const filePath = await saveImage(imageBlob, currentPromptText, settings.outputDirectory)
+              if (filePath) {
+                setCurrentImage(filePath)
               } else {
                 // Fallback to blob URL if save failed
                 if (imageUrl && imageUrl.startsWith('blob:')) {
                   URL.revokeObjectURL(imageUrl)
                 }
                 imageUrl = URL.createObjectURL(imageBlob)
-                currentImageFileName = '' // Reset filename since we're using blob
+                currentImageFileName = '' // Reset file path since we're using blob
               }
             }
           }
@@ -278,16 +278,16 @@
     }
   }
 
-  function updateImageUrl(fileName: string) {
+  function updateImageUrl(filePath: string) {
     if (imageUrl && imageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(imageUrl)
     }
-    imageUrl = `/api/image?path=${encodeURIComponent(fileName)}&outputDirectory=${encodeURIComponent(settings.outputDirectory)}`
-    currentImageFileName = fileName
+    imageUrl = `/api/image?path=${encodeURIComponent(filePath)}`
+    currentImageFileName = filePath
   }
 
-  function setCurrentImage(fileName: string) {
-    updateImageUrl(fileName)
+  function setCurrentImage(filePath: string) {
+    updateImageUrl(filePath)
   }
 
   // Settings dialog functions

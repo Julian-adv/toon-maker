@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit'
 import fs from 'fs/promises'
 import path from 'path'
 import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
+import { getTodayDate } from '$lib/utils/date'
 
 export async function GET({ url }) {
   try {
@@ -19,10 +20,25 @@ export async function GET({ url }) {
       })
     }
 
-    const files = await fs.readdir(outputDir)
-    const imageFiles = files
-      .filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file))
-      .sort() // Sort alphabetically (which should be chronological due to timestamp naming)
+    const imageFiles: string[] = []
+    
+    // Check today's date folder first
+    const todayFolder = getTodayDate()
+    const todayFolderPath = path.join(outputDir, todayFolder)
+    
+    try {
+      await fs.access(todayFolderPath)
+      const todayFiles = await fs.readdir(todayFolderPath)
+      const todayImageFiles = todayFiles
+        .filter(file => /\.(png|jpg|jpeg|webp)$/i.test(file))
+        .map(file => path.join(todayFolderPath, file))
+      imageFiles.push(...todayImageFiles)
+    } catch {
+      // Today's folder doesn't exist yet, that's fine
+    }
+    
+    // Sort by full path (which will be chronological due to date folders and time filenames)
+    imageFiles.sort()
     
     return json({
       success: true,

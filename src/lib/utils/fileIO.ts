@@ -65,9 +65,8 @@ export async function saveImage(imageBlob: Blob, prompt: string, outputDirectory
       if (result.prompt) {
         console.log('Prompt metadata added:', result.prompt);
       }
-      // Extract filename from path
-      const fileName = result.filePath.split('/').pop() || result.filePath.split('\\').pop()
-      return fileName || null
+      // Return the full file path
+      return result.filePath
     }
   } catch (error) {
     console.error('Error saving image:', error);
@@ -76,17 +75,13 @@ export async function saveImage(imageBlob: Blob, prompt: string, outputDirectory
 }
 
 export function getImageUrl(imagePath: string): string {
-  // Extract just the filename from the path for security
-  const fileName = imagePath.split('/').pop() || imagePath.split('\\').pop() || imagePath
-  
-  // Create URL with query parameter
-  return `/api/image?path=${encodeURIComponent(fileName)}`
+  // Create URL with full path
+  return `/api/image?path=${encodeURIComponent(imagePath)}`
 }
 
 export async function getImageMetadata(imagePath: string): Promise<any> {
   try {
-    const fileName = imagePath.split('/').pop() || imagePath.split('\\').pop() || imagePath
-    const response = await fetch(`/api/image?path=${encodeURIComponent(fileName)}&metadata=true`)
+    const response = await fetch(`/api/image?path=${encodeURIComponent(imagePath)}&metadata=true`)
     
     if (response.ok) {
       const result = await response.json()
