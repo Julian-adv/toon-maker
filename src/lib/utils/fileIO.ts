@@ -109,3 +109,20 @@ export async function getImageMetadata(imagePath: string): Promise<any> {
     return null
   }
 }
+
+export async function getImageList(): Promise<string[]> {
+  try {
+    const response = await fetch('/api/image-list')
+    
+    if (response.ok) {
+      const result = await response.json()
+      return result.files || []
+    } else {
+      console.error('Failed to fetch image list')
+      return []
+    }
+  } catch (error) {
+    console.error('Error fetching image list:', error)
+    return []
+  }
+}
