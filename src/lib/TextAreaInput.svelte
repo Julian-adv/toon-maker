@@ -94,54 +94,51 @@
   }
 
   function updateSuggestionPosition() {
-    // Try to get caret position using selection first
-    let popUpPos = getSelection()
-      .getRangeAt(0)
-      .getBoundingClientRect();
-    
-    // If selection approach doesn't work (x=0, y=0), use textarea mirroring technique
-    if (popUpPos.x == 0 && popUpPos.y == 0) {
-      const div = document.createElement('div');
-      const style = window.getComputedStyle(textareaElement);
-      
-      // Copy all computed styles from textarea to div
-      for (let i = 0; i < style.length; i++) {
-        const property = style[i];
-        div.style[property] = style.getPropertyValue(property);
-      }
-      
-      // Set additional properties for accurate positioning
-      div.style.position = 'absolute';
-      div.style.visibility = 'hidden';
-      div.style.top = '-9999px';
-      div.style.left = '-9999px';
-      div.style.whiteSpace = 'pre-wrap';
-      div.style.wordWrap = 'break-word';
-      
-      // Add text up to cursor position
-      div.textContent = textareaElement.value.substring(0, textareaElement.selectionStart);
-      
-      // Add a span at cursor position
-      const span = document.createElement('span');
-      div.appendChild(span);
-      
-      // Add div to DOM temporarily
-      document.body.appendChild(div);
-      
-      // Get positions
-      const divPos = div.getBoundingClientRect();
-      const spanPos = span.getBoundingClientRect();
-      const inputPos = textareaElement.getBoundingClientRect();
-      
-      popUpPos = {
-        x: inputPos.x + (spanPos.x - divPos.x),
-        y: inputPos.y + (spanPos.y - divPos.y)
-      };
-      
-      // Clean up
-      document.body.removeChild(div);
+    // Use textarea mirroring technique directly (selection API doesn't work reliably for textarea caret position)
+    let popUpPos = { x: 0, y: 0 }
+
+    const div = document.createElement('div')
+    const style = window.getComputedStyle(textareaElement)
+
+    // Copy all computed styles from textarea to div
+    for (let i = 0; i < style.length; i++) {
+      const property = style[i]
+      div.style.setProperty(property, style.getPropertyValue(property))
     }
-    
+
+    // Set additional properties for accurate positioning
+    div.style.visibility = 'hidden'
+
+    // Add text up to cursor position
+    const textBeforeCursor = textareaElement.value.substring(0, textareaElement.selectionStart)
+    const textAfterCursor = textareaElement.value.substring(textareaElement.selectionStart)
+
+    div.textContent = textBeforeCursor
+
+    // Add a span at cursor position
+    const span = document.createElement('span')
+    div.appendChild(span)
+
+    // Add remaining text after cursor for accurate wrapping
+    const afterText = document.createTextNode(textAfterCursor)
+    div.appendChild(afterText)
+
+    // Add div to DOM temporarily
+    document.body.appendChild(div)
+
+    // Get positions
+    const divPos = div.getBoundingClientRect()
+    const spanPos = span.getBoundingClientRect()
+    const inputPos = textareaElement.getBoundingClientRect()
+
+    popUpPos = {
+      x: inputPos.x + (spanPos.x - divPos.x),
+      y: inputPos.y + (spanPos.y - divPos.y)
+    }
+
+    // Clean up
+    document.body.removeChild(div)
+
     suggestionPosition = {
       top: popUpPos.y - textareaElement.getBoundingClientRect().y + 20, // Relative to textarea
       left: popUpPos.x - textareaElement.getBoundingClientRect().x
