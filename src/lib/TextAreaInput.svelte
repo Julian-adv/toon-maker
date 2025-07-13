@@ -140,8 +140,8 @@
     document.body.removeChild(div)
 
     suggestionPosition = {
-      top: popUpPos.y - textareaElement.getBoundingClientRect().y + 20, // Relative to textarea
-      left: popUpPos.x - textareaElement.getBoundingClientRect().x
+      top: popUpPos.y - textareaElement.getBoundingClientRect().y + 20 - textareaElement.scrollTop, // Relative to textarea accounting for scroll
+      left: popUpPos.x - textareaElement.getBoundingClientRect().x - textareaElement.scrollLeft
     }
   }
 
@@ -194,6 +194,14 @@
   function handleClick() {
     updateSuggestions()
   }
+
+  function handleBlur() {
+    // Use setTimeout to allow suggestion clicks to be processed before hiding
+    setTimeout(() => {
+      showSuggestions = false
+      selectedSuggestionIndex = -1
+    }, 150)
+  }
 </script>
 
 <div class="input-group">
@@ -213,6 +221,7 @@
       oninput={handleInput}
       onclick={handleClick}
       onkeydown={handleKeydown}
+      onblur={handleBlur}
     ></textarea>
 
     {#if showSuggestions}
@@ -282,32 +291,35 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     max-height: 200px;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 1000;
     min-width: 150px;
   }
 
   .suggestion-item {
-    padding: 8px 12px;
+    padding: 6px 12px;
     cursor: pointer;
     font-size: 14px;
-    font-family: monospace;
     border: none;
-    border-bottom: 1px solid #f0f0f0;
     background: none;
     width: 100%;
     text-align: left;
+    color: #2c6ded;
+    border-radius: 4px;
+    margin: 2px 4px;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
   }
 
-  .suggestion-item:last-child {
-    border-bottom: none;
+  .suggestion-item:hover {
+    background-color: #f5f5f5;
   }
 
-  .suggestion-item:hover,
   .suggestion-item.selected {
-    background-color: #f0f0f0;
-  }
-
-  .suggestion-item.selected {
-    background-color: #e3f2fd;
+    background-color: #e8f4fd;
+    color: #1976d2;
   }
 </style>
