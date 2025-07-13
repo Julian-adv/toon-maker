@@ -25,6 +25,7 @@
   let showSuggestions = $state(false)
   let selectedSuggestionIndex = $state(-1)
   let suggestionPosition = $state({ top: 0, left: 0 })
+  let mirrorDiv: HTMLDivElement | null = null
 
   onMount(async () => {
     try {
@@ -97,37 +98,42 @@
     // Use textarea mirroring technique directly (selection API doesn't work reliably for textarea caret position)
     let popUpPos = { x: 0, y: 0 }
 
-    const div = document.createElement('div')
-    const style = window.getComputedStyle(textareaElement)
+    // Create and setup mirror div if it doesn't exist
+    if (!mirrorDiv) {
+      mirrorDiv = document.createElement('div')
+      document.body.appendChild(mirrorDiv)
 
-    // Copy all computed styles from textarea to div
-    for (let i = 0; i < style.length; i++) {
-      const property = style[i]
-      div.style.setProperty(property, style.getPropertyValue(property))
+      const style = window.getComputedStyle(textareaElement)
+
+      // Copy all computed styles from textarea to mirror div
+      for (let i = 0; i < style.length; i++) {
+        const property = style[i]
+        mirrorDiv.style.setProperty(property, style.getPropertyValue(property))
+      }
+
+      // Set position styles for accurate positioning
+      mirrorDiv.style.visibility = 'hidden'
     }
 
-    // Set additional properties for accurate positioning
-    div.style.visibility = 'hidden'
+    // Clear previous content
+    mirrorDiv.innerHTML = ''
 
     // Add text up to cursor position
     const textBeforeCursor = textareaElement.value.substring(0, textareaElement.selectionStart)
     const textAfterCursor = textareaElement.value.substring(textareaElement.selectionStart)
 
-    div.textContent = textBeforeCursor
+    mirrorDiv.textContent = textBeforeCursor
 
     // Add a span at cursor position
     const span = document.createElement('span')
-    div.appendChild(span)
+    mirrorDiv.appendChild(span)
 
     // Add remaining text after cursor for accurate wrapping
     const afterText = document.createTextNode(textAfterCursor)
-    div.appendChild(afterText)
-
-    // Add div to DOM temporarily
-    document.body.appendChild(div)
+    mirrorDiv.appendChild(afterText)
 
     // Get positions
-    const divPos = div.getBoundingClientRect()
+    const divPos = mirrorDiv.getBoundingClientRect()
     const spanPos = span.getBoundingClientRect()
     const inputPos = textareaElement.getBoundingClientRect()
 
@@ -135,9 +141,6 @@
       x: inputPos.x + (spanPos.x - divPos.x),
       y: inputPos.y + (spanPos.y - divPos.y)
     }
-
-    // Clean up
-    document.body.removeChild(div)
 
     suggestionPosition = {
       top: popUpPos.y - textareaElement.getBoundingClientRect().y + 20 - textareaElement.scrollTop, // Relative to textarea accounting for scroll
@@ -178,6 +181,9 @@
         if (selectedSuggestionIndex >= 0) {
           event.preventDefault()
           insertSuggestion(suggestions[selectedSuggestionIndex])
+        } else if (suggestions.length > 0) {
+          event.preventDefault()
+          insertSuggestion(suggestions[0])
         }
         break
       case 'Escape':
@@ -233,7 +239,10 @@
           <button
             type="button"
             class="suggestion-item {index === selectedSuggestionIndex ? 'selected' : ''}"
-            onclick={() => insertSuggestion(suggestion)}
+            onmousedown={(e) => {
+              e.preventDefault()
+              insertSuggestion(suggestion)
+            }}
           >
             {suggestion}
           </button>
