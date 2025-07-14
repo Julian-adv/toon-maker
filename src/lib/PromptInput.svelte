@@ -9,6 +9,7 @@
     saveImage,
     loadPrompts,
     getImageList,
+    getImageMetadata,
     loadSettings,
     saveSettings as saveSettingsToFile
   } from './utils/fileIO'
@@ -220,7 +221,7 @@
             onImageReceived: async (imageBlob) => {
               const filePath = await saveImage(imageBlob, promptsData, settings.outputDirectory, workflow)
               if (filePath) {
-                setCurrentImage(filePath)
+                await setCurrentImage(filePath)
               } else {
                 // Fallback to blob URL if save failed
                 if (imageUrl && imageUrl.startsWith('blob:')) {
@@ -261,14 +262,14 @@
     if (!currentImageFileName) {
       // If no current image, show the latest file
       const latestFile = allFiles[allFiles.length - 1]
-      updateImageUrl(latestFile)
+      await updateImageUrl(latestFile)
       return
     }
 
     const currentIndex = allFiles.indexOf(currentImageFileName)
     if (currentIndex > 0) {
       const previousFile = allFiles[currentIndex - 1]
-      updateImageUrl(previousFile)
+      await updateImageUrl(previousFile)
     }
   }
 
@@ -279,27 +280,56 @@
     if (!currentImageFileName) {
       // If no current image, show the first file
       const firstFile = allFiles[0]
-      updateImageUrl(firstFile)
+      await updateImageUrl(firstFile)
       return
     }
 
     const currentIndex = allFiles.indexOf(currentImageFileName)
     if (currentIndex !== -1 && currentIndex < allFiles.length - 1) {
       const nextFile = allFiles[currentIndex + 1]
-      updateImageUrl(nextFile)
+      await updateImageUrl(nextFile)
     }
   }
 
-  function updateImageUrl(filePath: string) {
+  async function updateImageUrl(filePath: string) {
     if (imageUrl && imageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(imageUrl)
     }
     imageUrl = `/api/image?path=${encodeURIComponent(filePath)}`
     currentImageFileName = filePath
+    
+    // Load metadata and update promptsData
+    await loadImageMetadata(filePath)
+  }
+  
+  async function loadImageMetadata(filePath: string) {
+    try {
+      const metadata = await getImageMetadata(filePath) as { parameters?: string }
+      
+      if (metadata && metadata.parameters) {
+        // Parse metadata to extract categorized prompts
+        const params = metadata.parameters as string
+        
+        const qualityMatch = params.match(/Quality: ([^\n]*)/)?.[1]?.trim()
+        const characterMatch = params.match(/Character: ([^\n]*)/)?.[1]?.trim()
+        const outfitMatch = params.match(/Outfit: ([^\n]*)/)?.[1]?.trim()
+        const poseMatch = params.match(/Pose: ([^\n]*)/)?.[1]?.trim()
+        const backgroundsMatch = params.match(/Backgrounds: ([^\n]*)/)?.[1]?.trim()
+        
+        // Update promptsData with metadata values
+        if (qualityMatch) promptsData.qualityValue = qualityMatch
+        if (characterMatch) promptsData.characterValue = characterMatch
+        if (outfitMatch) promptsData.outfitValue = outfitMatch
+        if (poseMatch) promptsData.poseValue = poseMatch
+        if (backgroundsMatch) promptsData.backgroundsValue = backgroundsMatch
+      }
+    } catch (error) {
+      console.error('Failed to load image metadata:', error)
+    }
   }
 
-  function setCurrentImage(filePath: string) {
-    updateImageUrl(filePath)
+  async function setCurrentImage(filePath: string) {
+    await updateImageUrl(filePath)
   }
 
   // Settings dialog functions
