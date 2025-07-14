@@ -74,15 +74,33 @@
     }
   })
 
-  // Save prompts whenever they change
-  $effect(() => {
-    if (promptsData.qualityValues.length > 0 || promptsData.characterValues.length > 0) {
-      savePrompts(promptsData)
-    }
-  })
 
   // Event handlers
   async function handleGenerate() {
+    // Add current values to options if they're not already there
+    const updated = { ...promptsData }
+    
+    if (updated.qualityValue && !updated.qualityValues.includes(updated.qualityValue)) {
+      updated.qualityValues = [...updated.qualityValues, updated.qualityValue]
+    }
+    if (updated.characterValue && !updated.characterValues.includes(updated.characterValue)) {
+      updated.characterValues = [...updated.characterValues, updated.characterValue]
+    }
+    if (updated.outfitValue && !updated.outfitValues.includes(updated.outfitValue)) {
+      updated.outfitValues = [...updated.outfitValues, updated.outfitValue]
+    }
+    if (updated.poseValue && !updated.poseValues.includes(updated.poseValue)) {
+      updated.poseValues = [...updated.poseValues, updated.poseValue]
+    }
+    if (updated.backgroundsValue && !updated.backgroundsValues.includes(updated.backgroundsValue)) {
+      updated.backgroundsValues = [...updated.backgroundsValues, updated.backgroundsValue]
+    }
+    
+    promptsData = updated
+    
+    // Save prompts before generating
+    savePrompts(promptsData)
+    
     await generateImage({
       promptsData,
       settings,

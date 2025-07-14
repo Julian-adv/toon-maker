@@ -92,27 +92,27 @@
 </script>
 
 <div class="image-viewer">
-  {#if imageUrl}
-    <div class="image-container">
-      <button class="nav-button prev" onclick={goToPreviousImage} aria-label="Previous image">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      
+  <div class="image-container">
+    <button class="nav-button prev" onclick={goToPreviousImage} aria-label="Previous image">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    
+    {#if imageUrl}
       <img src={imageUrl} alt="" class="main-image" />
-      
-      <button class="nav-button next" onclick={goToNextImage} aria-label="Next image">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    </div>
-  {:else}
-    <div class="placeholder">
-      <p>No image to display</p>
-    </div>
-  {/if}
+    {:else}
+      <div class="placeholder">
+        <p>No image to display</p>
+      </div>
+    {/if}
+    
+    <button class="nav-button next" onclick={goToNextImage} aria-label="Next image">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
 </div>
 
 <style>
@@ -176,7 +176,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 400px;
+    width: 832px;
+    height: 1216px;
     background: #f5f5f5;
     border-radius: 8px;
     color: #666;

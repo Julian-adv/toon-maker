@@ -13,6 +13,36 @@
 
   // Update functions for form inputs
 
+  function updateQualityValue(value: string) {
+    const updated = { ...promptsData }
+    updated.qualityValue = value
+    onPromptsChange(updated)
+  }
+
+  function updateCharacterValue(value: string) {
+    const updated = { ...promptsData }
+    updated.characterValue = value
+    onPromptsChange(updated)
+  }
+
+  function updateOutfitValue(value: string) {
+    const updated = { ...promptsData }
+    updated.outfitValue = value
+    onPromptsChange(updated)
+  }
+
+  function updatePoseValue(value: string) {
+    const updated = { ...promptsData }
+    updated.poseValue = value
+    onPromptsChange(updated)
+  }
+
+  function updateBackgroundsValue(value: string) {
+    const updated = { ...promptsData }
+    updated.backgroundsValue = value
+    onPromptsChange(updated)
+  }
+
   function updateCheckpoint(checkpoint: string) {
     const updated = { ...promptsData }
     updated.selectedCheckpoint = checkpoint
@@ -38,50 +68,55 @@
       id="quality"
       label="Quality"
       placeholder="Quality settings..."
-      bind:value={promptsData.qualityValue}
+      value={promptsData.qualityValue}
       options={promptsData.qualityValues}
       rows={3}
-      bind:selectedValue={promptsData.qualityValue}
+      selectedValue={promptsData.qualityValue}
+      onValueChange={updateQualityValue}
     />
 
     <TextAreaInput
       id="character"
       label="Character"
       placeholder="Character description..."
-      bind:value={promptsData.characterValue}
+      value={promptsData.characterValue}
       options={promptsData.characterValues}
       rows={3}
-      bind:selectedValue={promptsData.characterValue}
+      selectedValue={promptsData.characterValue}
+      onValueChange={updateCharacterValue}
     />
 
     <TextAreaInput
       id="outfit"
       label="Outfit"
       placeholder="Outfit description..."
-      bind:value={promptsData.outfitValue}
+      value={promptsData.outfitValue}
       options={promptsData.outfitValues}
       rows={3}
-      bind:selectedValue={promptsData.outfitValue}
+      selectedValue={promptsData.outfitValue}
+      onValueChange={updateOutfitValue}
     />
 
     <TextAreaInput
       id="pose"
       label="Pose"
       placeholder="Pose description..."
-      bind:value={promptsData.poseValue}
+      value={promptsData.poseValue}
       options={promptsData.poseValues}
       rows={3}
-      bind:selectedValue={promptsData.poseValue}
+      selectedValue={promptsData.poseValue}
+      onValueChange={updatePoseValue}
     />
 
     <TextAreaInput
       id="backgrounds"
       label="Backgrounds"
       placeholder="Background description..."
-      bind:value={promptsData.backgroundsValue}
+      value={promptsData.backgroundsValue}
       options={promptsData.backgroundsValues}
       rows={3}
-      bind:selectedValue={promptsData.backgroundsValue}
+      selectedValue={promptsData.backgroundsValue}
+      onValueChange={updateBackgroundsValue}
     />
   </div>
 

@@ -8,7 +8,8 @@
     placeholder,
     rows,
     options = [],
-    selectedValue = $bindable()
+    selectedValue = $bindable(),
+    onValueChange
   }: {
     id: string
     label: string
@@ -17,6 +18,7 @@
     rows: number
     options: string[]
     selectedValue: string
+    onValueChange: (value: string) => void
   } = $props()
 
   let textareaElement: HTMLTextAreaElement
@@ -195,6 +197,7 @@
 
   function handleInput() {
     updateSuggestions()
+    onValueChange(value)
   }
 
   function handleClick() {
@@ -212,7 +215,7 @@
 
 <div class="input-group">
   <label for={id}>{label}</label>
-  <select class="select-control" bind:value={selectedValue}>
+  <select class="select-control" bind:value={selectedValue} onchange={() => onValueChange(selectedValue)}>
     {#each options as option (option)}
       <option value={option}>{option.substring(0, 180)}</option>
     {/each}
@@ -314,8 +317,7 @@
     width: 100%;
     text-align: left;
     color: #2c6ded;
-    border-radius: 4px;
-    margin: 2px 4px;
+    margin: 2px 0;
     transition: background-color 0.15s ease;
     white-space: nowrap;
     overflow: hidden;
