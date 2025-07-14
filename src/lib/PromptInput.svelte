@@ -230,6 +230,10 @@
                 imageUrl = URL.createObjectURL(imageBlob)
                 currentImageFileName = '' // Reset file path since we're using blob
               }
+            },
+            onError: (error) => {
+              console.error('WebSocket error:', error)
+              isLoading = false
             }
           }
 

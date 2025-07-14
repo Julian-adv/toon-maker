@@ -29,6 +29,7 @@ export interface WebSocketCallbacks {
   onLoadingChange: (loading: boolean) => void
   onProgressUpdate: (progress: { value: number; max: number }) => void
   onImageReceived: (imageBlob: Blob) => void
+  onError: (error: string) => void
 }
 
 export function connectWebSocket(
@@ -55,6 +56,7 @@ export function connectWebSocket(
         const data = message.data
         if (data.prompt_id === promptId) {
           lastExecutingNode = data.node
+          console.log('Node executing:', data.node)
           if (data.node === null) {
             // Execution is done for this prompt
             console.log('Execution finished for prompt:', promptId)
@@ -77,15 +79,19 @@ export function connectWebSocket(
     } else if (event.data instanceof ArrayBuffer) {
       // Check if the last executing node was our SaveImageWebsocket node
       // AND that the current prompt ID matches.
+      console.log('Received ArrayBuffer, lastExecutingNode:', lastExecutingNode, 'finalSaveNodeId:', finalSaveNodeId, 'promptId:', promptId)
       if (
         lastExecutingNode === finalSaveNodeId &&
-        currentPromptId /* && execution prompt_id matches */
+        promptId /* && execution prompt_id matches */
       ) {
+        console.log('Creating image blob from ArrayBuffer, size:', event.data.byteLength)
         const imageBlob = new Blob([event.data.slice(8)], { type: 'image/png' })
         callbacks.onImageReceived(imageBlob)
         callbacks.onLoadingChange(false)
         ws.close()
         lastExecutingNode = null
+      } else {
+        console.log('ArrayBuffer received but conditions not met')
       }
     }
   }

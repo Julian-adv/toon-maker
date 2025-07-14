@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PromptInput from '$lib/PromptInput.svelte'
+  import ImageGenerator from '$lib/ImageGenerator.svelte'
 </script>
 
 <svelte:head>
@@ -8,7 +8,7 @@
 </svelte:head>
 
 <section>
-  <PromptInput />
+  <ImageGenerator />
 </section>
 
 <style>
