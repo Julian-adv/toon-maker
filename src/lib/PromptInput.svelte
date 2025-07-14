@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte'
   import TextAreaInput from './TextAreaInput.svelte'
-  import SettingsDialog, { type Settings } from './SettingsDialog.svelte'
+  import SettingsDialog from './SettingsDialog.svelte'
+  import type { Settings } from '$lib/types'
   import { savePrompts, saveImage, loadPrompts, getImageList, loadSettings, saveSettings as saveSettingsToFile } from './utils/fileIO'
   import type { PromptsData } from './utils/fileIO'
   import { fetchCheckpoints, connectWebSocket, type WebSocketCallbacks } from './utils/comfyui'
@@ -167,6 +168,13 @@
       // Fallback or error handling if no checkpoint is selected
       console.error('No checkpoint selected. Using the default checkpoint defined in workflow.')
     }
+    // Apply settings values to workflow
+    workflow['8'].inputs.steps = settings.steps
+    workflow['8'].inputs.cfg = settings.cfgScale
+    workflow['8'].inputs.sampler_name = settings.sampler
+    workflow['9'].inputs.width = settings.imageWidth
+    workflow['9'].inputs.height = settings.imageHeight
+    
     // Apply random seed to relevant KSamplers
     workflow['8'].inputs.seed = Math.floor(Math.random() * 10000000000000000) // KSampler 1
     if (workflow['17']) {
@@ -206,7 +214,7 @@
               progressData = progress
             },
             onImageReceived: async (imageBlob) => {
-              const filePath = await saveImage(imageBlob, currentPromptText, settings.outputDirectory)
+              const filePath = await saveImage(imageBlob, currentPromptText, settings.outputDirectory, workflow)
               if (filePath) {
                 setCurrentImage(filePath)
               } else {

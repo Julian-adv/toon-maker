@@ -84,7 +84,7 @@
       return
     }
 
-    suggestions = tags.filter((tag) => tag.toLowerCase().includes(word.toLowerCase())).slice(0, 10) // Limit to 10 suggestions
+    suggestions = tags.filter((tag) => tag.toLowerCase().includes(word.toLowerCase())).slice(0, 100)
 
     showSuggestions = suggestions.length > 0
     selectedSuggestionIndex = -1

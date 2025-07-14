@@ -8,18 +8,41 @@ import textChunk from 'png-chunk-text'
 import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
 import { getTodayDate, getFormattedTime } from '$lib/utils/date'
 
+// Type definitions for workflow and settings data
+interface WorkflowNode {
+  inputs?: {
+    steps?: number
+    sampler_name?: string
+    scheduler?: string
+    cfg?: number
+    seed?: number
+    width?: number
+    height?: number
+    ckpt_name?: string
+  }
+}
+
+interface WorkflowData {
+  [key: string]: WorkflowNode
+}
+
+interface PngChunk {
+  name: string
+  data: Uint8Array
+}
+
 export async function GET({ url }) {
   try {
     const imagePath = url.searchParams.get('path')
     const metadataOnly = url.searchParams.get('metadata') === 'true'
-    
+
     if (!imagePath) {
       return json({ error: 'Image path is required' }, { status: 400 })
     }
 
     // Use the full path directly
     const fullPath = path.resolve(imagePath)
-    
+
     // Security: ensure the path is a real file and contains no directory traversal
     if (imagePath.includes('..') || !path.isAbsolute(imagePath)) {
       return json({ error: 'Invalid image path' }, { status: 403 })
@@ -36,7 +59,7 @@ export async function GET({ url }) {
     if (metadataOnly) {
       // Extract metadata using Sharp
       const metadata = await sharp(fullPath).metadata()
-      
+
       return json({
         success: true,
         metadata: {
@@ -49,7 +72,7 @@ export async function GET({ url }) {
           depth: metadata.depth,
           hasAlpha: metadata.hasAlpha,
           // Extract parameters from PNG text chunks (WebUI style)
-          parameters: await extractPngParameters(fullPath),
+          parameters: await extractPngParameters(fullPath)
         }
       })
     }
@@ -57,7 +80,7 @@ export async function GET({ url }) {
     // Otherwise, serve the image file
     const imageBuffer = await fs.readFile(fullPath)
     const fileExtension = path.extname(fullPath).toLowerCase()
-    
+
     // Determine content type
     let contentType = 'application/octet-stream'
     if (fileExtension === '.png') {
@@ -83,22 +106,31 @@ export async function GET({ url }) {
 export async function POST({ request }) {
   try {
     const contentType = request.headers.get('content-type')
-    
+
     let imageBuffer: Buffer
     let promptText = ''
     let outputDirectory = DEFAULT_OUTPUT_DIRECTORY
-    
+    let workflowData: WorkflowData | null = null
+
     if (contentType?.includes('multipart/form-data')) {
       // Handle form data with prompt metadata and output directory
       const formData = await request.formData()
       const imageFile = formData.get('image') as File
       const prompt = formData.get('prompt') as string
       const outputDir = formData.get('outputDirectory') as string
-      
+      const workflow = formData.get('workflow') as string
+
       if (imageFile) {
         imageBuffer = Buffer.from(await imageFile.arrayBuffer())
         promptText = prompt || ''
         outputDirectory = outputDir || DEFAULT_OUTPUT_DIRECTORY
+
+        // Parse workflow data
+        try {
+          workflowData = workflow ? JSON.parse(workflow) : null
+        } catch (e) {
+          console.warn('Failed to parse workflow data:', e)
+        }
       } else {
         throw new Error('No image file found in form data')
       }
@@ -118,9 +150,50 @@ export async function POST({ request }) {
 
     // Add metadata to PNG if prompt is provided
     if (promptText) {
+      // Extract parameters from workflow and settings
+      const steps = workflowData?.['8']?.inputs?.steps || 28
+      const sampler = workflowData?.['8']?.inputs?.sampler_name || 'euler_ancestral'
+      const scheduler = workflowData?.['8']?.inputs?.scheduler || 'simple'
+      const cfg = workflowData?.['8']?.inputs?.cfg || 5
+      const seed = workflowData?.['8']?.inputs?.seed || Math.floor(Math.random() * 10000000000)
+      const width = workflowData?.['9']?.inputs?.width || 832
+      const height = workflowData?.['9']?.inputs?.height || 1216
+      const model = workflowData?.['10']?.inputs?.ckpt_name || 'unknown'
+
+      // Convert scheduler to proper format
+      const scheduleType =
+        scheduler === 'simple'
+          ? 'Simple'
+          : scheduler === 'karras'
+            ? 'Karras'
+            : scheduler === 'exponential'
+              ? 'Exponential'
+              : scheduler === 'sgm_uniform'
+                ? 'SGM Uniform'
+                : 'Simple'
+
+      // Convert sampler name to proper format
+      const samplerName =
+        sampler === 'euler_ancestral'
+          ? 'Euler a'
+          : sampler === 'dpmpp_2m_sde'
+            ? 'DPM++ 2M SDE'
+            : sampler === 'dpmpp_2m'
+              ? 'DPM++ 2M'
+              : sampler === 'euler'
+                ? 'Euler'
+                : sampler === 'heun'
+                  ? 'Heun'
+                  : sampler === 'lms'
+                    ? 'LMS'
+                    : sampler
+
+      // Extract model name without extension
+      const modelName = model.replace(/\.(safetensors|ckpt)$/, '')
+
       // Format prompt in WebUI style with parameters
       const parametersText = `${promptText}
-Steps: 28, Sampler: euler_ancestral, Schedule type: simple, CFG scale: 5, Seed: ${Math.floor(Math.random() * 10000000000)}, Size: 832x1216, Software: Toon Maker`
+Steps: ${steps}, Sampler: ${samplerName}, Schedule type: ${scheduleType}, CFG scale: ${cfg}, Seed: ${seed}, Size: ${width}x${height}, Model: ${modelName}`
 
       // First process the image with Sharp
       const processedBuffer = await sharp(imageBuffer)
@@ -129,26 +202,26 @@ Steps: 28, Sampler: euler_ancestral, Schedule type: simple, CFG scale: 5, Seed: 
           palette: false
         })
         .toBuffer()
-      
+
       // Extract PNG chunks
       const chunks = extractChunks(processedBuffer)
-      
+
       // Create a text chunk with parameters (WebUI style)
       const parametersChunk = textChunk.encode('parameters', parametersText)
-      
+
       // Insert the text chunk before the IEND chunk
-      const iendIndex = chunks.findIndex((chunk: any) => chunk.name === 'IEND')
+      const iendIndex = chunks.findIndex((chunk: PngChunk) => chunk.name === 'IEND')
       if (iendIndex > -1) {
         chunks.splice(iendIndex, 0, parametersChunk)
       } else {
         chunks.push(parametersChunk)
       }
-      
+
       // Encode chunks back to PNG buffer
       const finalBuffer = Buffer.from(encodeChunks(chunks))
-      
+
       await fs.writeFile(filePath, finalBuffer)
-      
+
       console.log('Added parameters metadata:', parametersText)
     } else {
       // Save without metadata if no prompt provided
@@ -167,7 +240,7 @@ async function extractPngParameters(filePath: string): Promise<string | null> {
   try {
     const imageBuffer = await fs.readFile(filePath)
     const chunks = extractChunks(imageBuffer)
-    
+
     // Look for text chunks containing parameters
     for (const chunk of chunks) {
       if (chunk.name === 'tEXt') {
