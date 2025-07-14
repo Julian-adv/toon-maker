@@ -1,20 +1,12 @@
-import type { Settings } from '$lib/types'
+// File I/O utility functions
+//
+// This module contains various file input/output operations including:
+// - Saving and loading prompts data
+// - Image saving with metadata
+// - Settings management
+// - Image list retrieval
 
-export interface PromptsData {
-  qualityValues: string[]
-  characterValues: string[]
-  outfitValues: string[]
-  poseValues: string[]
-  backgroundsValues: string[]
-  selectedCheckpoint: string | null
-  useUpscale: boolean
-  useFaceDetailer: boolean
-  qualityValue: string
-  characterValue: string
-  outfitValue: string
-  poseValue: string
-  backgroundsValue: string
-}
+import type { Settings, PromptsData } from '$lib/types'
 
 export async function savePrompts(data: PromptsData): Promise<void> {
   try {
@@ -46,7 +38,7 @@ export async function loadPrompts(): Promise<PromptsData | null> {
 
 export async function saveImage(
   imageBlob: Blob,
-  prompt: string,
+  promptsData: PromptsData,
   outputDirectory: string,
   workflow: unknown
 ): Promise<string | null> {
@@ -54,7 +46,11 @@ export async function saveImage(
     // Send as form data with prompt metadata and output directory
     const formData = new FormData()
     formData.append('image', imageBlob, 'generated-image.png')
-    formData.append('prompt', prompt)
+    formData.append('quality', promptsData.qualityValue)
+    formData.append('character', promptsData.characterValue)
+    formData.append('outfit', promptsData.outfitValue)
+    formData.append('pose', promptsData.poseValue)
+    formData.append('backgrounds', promptsData.backgroundsValue)
     formData.append('outputDirectory', outputDirectory)
 
     // Add workflow data for metadata generation

@@ -1,10 +1,17 @@
 <script lang="ts">
+  // Component for inputting prompts and generating images
   import { onDestroy, onMount } from 'svelte'
   import TextAreaInput from './TextAreaInput.svelte'
   import SettingsDialog from './SettingsDialog.svelte'
-  import type { Settings } from '$lib/types'
-  import { savePrompts, saveImage, loadPrompts, getImageList, loadSettings, saveSettings as saveSettingsToFile } from './utils/fileIO'
-  import type { PromptsData } from './utils/fileIO'
+  import type { Settings, PromptsData } from '$lib/types'
+  import {
+    savePrompts,
+    saveImage,
+    loadPrompts,
+    getImageList,
+    loadSettings,
+    saveSettings as saveSettingsToFile
+  } from './utils/fileIO'
   import { fetchCheckpoints, connectWebSocket, type WebSocketCallbacks } from './utils/comfyui'
   import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './utils/workflow'
   import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
@@ -15,7 +22,6 @@
   let clientId: string = ''
   let progressData: { value: number; max: number } = $state({ value: 0, max: 100 })
   let availableCheckpoints: string[] = $state([])
-  let currentPromptText: string = ''
 
   // Image navigation state
   let currentImageFileName: string = $state('') // Current image file path
@@ -119,8 +125,6 @@
       return
     }
 
-    // Store current prompt for use in image saving
-    currentPromptText = promptValue
 
     isLoading = true
     progressData.value = 0
@@ -174,7 +178,7 @@
     workflow['8'].inputs.sampler_name = settings.sampler
     workflow['9'].inputs.width = settings.imageWidth
     workflow['9'].inputs.height = settings.imageHeight
-    
+
     // Apply random seed to relevant KSamplers
     workflow['8'].inputs.seed = Math.floor(Math.random() * 10000000000000000) // KSampler 1
     if (workflow['17']) {
@@ -214,7 +218,7 @@
               progressData = progress
             },
             onImageReceived: async (imageBlob) => {
-              const filePath = await saveImage(imageBlob, currentPromptText, settings.outputDirectory, workflow)
+              const filePath = await saveImage(imageBlob, promptsData, settings.outputDirectory, workflow)
               if (filePath) {
                 setCurrentImage(filePath)
               } else {
@@ -309,7 +313,7 @@
 
   async function saveSettings(newSettings: Settings) {
     settings = { ...newSettings }
-    
+
     // Save settings to file
     const success = await saveSettingsToFile(settings)
     if (success) {
@@ -317,7 +321,7 @@
     } else {
       console.error('Failed to save settings to file')
     }
-    
+
     showSettingsDialog = false
   }
 

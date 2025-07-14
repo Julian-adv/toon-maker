@@ -1,7 +1,9 @@
+// API for prompts storage and retrieval
+
 import { json } from '@sveltejs/kit';
 import fs from 'fs/promises';
 import path from 'path';
-import type { PromptsData } from '$lib/utils/fileIO';
+import type { PromptsData } from '$lib/types';
 
 const dataDir = path.resolve(process.cwd(), 'data')
 const filePath = path.join(dataDir, 'prompts.json')

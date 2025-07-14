@@ -1,3 +1,5 @@
+// API for image storage and retrieval
+
 import { json } from '@sveltejs/kit'
 import fs from 'fs/promises'
 import path from 'path'
@@ -111,18 +113,40 @@ export async function POST({ request }) {
     let promptText = ''
     let outputDirectory = DEFAULT_OUTPUT_DIRECTORY
     let workflowData: WorkflowData | null = null
+    let categorizedPrompts = {
+      quality: '',
+      character: '',
+      outfit: '',
+      pose: '',
+      backgrounds: ''
+    }
 
     if (contentType?.includes('multipart/form-data')) {
       // Handle form data with prompt metadata and output directory
       const formData = await request.formData()
       const imageFile = formData.get('image') as File
-      const prompt = formData.get('prompt') as string
+      const quality = formData.get('quality') as string
+      const character = formData.get('character') as string
+      const outfit = formData.get('outfit') as string
+      const pose = formData.get('pose') as string
+      const backgrounds = formData.get('backgrounds') as string
       const outputDir = formData.get('outputDirectory') as string
       const workflow = formData.get('workflow') as string
 
       if (imageFile) {
         imageBuffer = Buffer.from(await imageFile.arrayBuffer())
-        promptText = prompt || ''
+        // Reconstruct full prompt for metadata
+        const promptParts = [quality, character, outfit, pose, backgrounds].filter(Boolean)
+        promptText = promptParts.join(', ')
+        
+        // Store categorized prompts for structured metadata
+        categorizedPrompts = {
+          quality: quality || '',
+          character: character || '',
+          outfit: outfit || '',
+          pose: pose || '',
+          backgrounds: backgrounds || ''
+        }
         outputDirectory = outputDir || DEFAULT_OUTPUT_DIRECTORY
 
         // Parse workflow data
@@ -161,38 +185,35 @@ export async function POST({ request }) {
       const model = workflowData?.['10']?.inputs?.ckpt_name || 'unknown'
 
       // Convert scheduler to proper format
-      const scheduleType =
-        scheduler === 'simple'
-          ? 'Simple'
-          : scheduler === 'karras'
-            ? 'Karras'
-            : scheduler === 'exponential'
-              ? 'Exponential'
-              : scheduler === 'sgm_uniform'
-                ? 'SGM Uniform'
-                : 'Simple'
+      const schedulerMap: Record<string, string> = {
+        'simple': 'Simple',
+        'karras': 'Karras',
+        'exponential': 'Exponential',
+        'sgm_uniform': 'SGM Uniform'
+      }
+      const scheduleType = schedulerMap[scheduler] || 'Simple'
 
       // Convert sampler name to proper format
-      const samplerName =
-        sampler === 'euler_ancestral'
-          ? 'Euler a'
-          : sampler === 'dpmpp_2m_sde'
-            ? 'DPM++ 2M SDE'
-            : sampler === 'dpmpp_2m'
-              ? 'DPM++ 2M'
-              : sampler === 'euler'
-                ? 'Euler'
-                : sampler === 'heun'
-                  ? 'Heun'
-                  : sampler === 'lms'
-                    ? 'LMS'
-                    : sampler
+      const samplerMap: Record<string, string> = {
+        'euler_ancestral': 'Euler a',
+        'dpmpp_2m_sde': 'DPM++ 2M SDE',
+        'dpmpp_2m': 'DPM++ 2M',
+        'euler': 'Euler',
+        'heun': 'Heun',
+        'lms': 'LMS'
+      }
+      const samplerName = samplerMap[sampler] || sampler
 
       // Extract model name without extension
       const modelName = model.replace(/\.(safetensors|ckpt)$/, '')
 
       // Format prompt in WebUI style with parameters
       const parametersText = `${promptText}
+Quality: ${categorizedPrompts.quality}
+Character: ${categorizedPrompts.character}
+Outfit: ${categorizedPrompts.outfit}
+Pose: ${categorizedPrompts.pose}
+Backgrounds: ${categorizedPrompts.backgrounds}
 Steps: ${steps}, Sampler: ${samplerName}, Schedule type: ${scheduleType}, CFG scale: ${cfg}, Seed: ${seed}, Size: ${width}x${height}, Model: ${modelName}`
 
       // First process the image with Sharp
