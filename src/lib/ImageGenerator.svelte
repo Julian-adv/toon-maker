@@ -4,7 +4,7 @@
   import ImageViewer from './ImageViewer.svelte'
   import PromptForm from './PromptForm.svelte'
   import GenerationControls from './GenerationControls.svelte'
-  import type { Settings, PromptsData } from '$lib/types'
+  import type { Settings, PromptsData, ProgressData } from '$lib/types'
   import {
     savePrompts,
     loadPrompts,
@@ -19,7 +19,7 @@
   let isLoading = $state(false)
   let imageUrl: string | null = $state(null)
   let currentImageFileName = $state('')
-  let progressData = $state({ value: 0, max: 100 })
+  let progressData: ProgressData = $state({ value: 0, max: 100, currentNode: '' })
   let availableCheckpoints: string[] = $state([])
   let imageViewer: { updateFileList: () => Promise<void> } | undefined
 

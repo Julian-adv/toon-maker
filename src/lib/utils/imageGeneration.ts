@@ -1,11 +1,11 @@
 // Image generation utility functions
-// 
-// This module contains the core logic for generating images with ComfyUI
+//
+// This module orchestrates the complete image generation workflow with ComfyUI
 
 import { saveImage } from './fileIO'
 import { connectWebSocket, type WebSocketCallbacks } from './comfyui'
 import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
-import type { PromptsData, Settings } from '$lib/types'
+import type { PromptsData, Settings, ProgressData } from '$lib/types'
 
 // Workflow node interfaces
 interface WorkflowNodeInput {
@@ -28,20 +28,14 @@ export interface GenerationOptions {
   promptsData: PromptsData
   settings: Settings
   onLoadingChange: (loading: boolean) => void
-  onProgressUpdate: (progress: { value: number; max: number }) => void
+  onProgressUpdate: (progress: ProgressData) => void
   onImageReceived: (imageBlob: Blob, filePath: string) => void
   onError: (error: string) => void
 }
 
 export async function generateImage(options: GenerationOptions): Promise<void> {
-  const {
-    promptsData,
-    settings,
-    onLoadingChange,
-    onProgressUpdate,
-    onImageReceived,
-    onError
-  } = options
+  const { promptsData, settings, onLoadingChange, onProgressUpdate, onImageReceived, onError } =
+    options
 
   try {
     // Build the combined prompt
@@ -51,7 +45,9 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
       promptsData.outfitValue,
       promptsData.poseValue,
       promptsData.backgroundsValue
-    ].filter(Boolean).join(', ')
+    ]
+      .filter(Boolean)
+      .join(', ')
 
     if (!promptValue.trim()) {
       onError('Prompt is empty')
@@ -59,7 +55,7 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     }
 
     onLoadingChange(true)
-    onProgressUpdate({ value: 0, max: 100 })
+    onProgressUpdate({ value: 0, max: 100, currentNode: '' })
 
     // Generate unique client ID
     const clientId = crypto.randomUUID()
@@ -86,7 +82,6 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
       onImageReceived,
       onError
     })
-
   } catch (error) {
     console.error('Failed to generate image:', error)
     onError(error instanceof Error ? error.message : 'Failed to generate image')
@@ -94,7 +89,11 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
   }
 }
 
-function configureWorkflow(workflow: ComfyUIWorkflow, promptsData: PromptsData, settings: Settings) {
+function configureWorkflow(
+  workflow: ComfyUIWorkflow,
+  promptsData: PromptsData,
+  settings: Settings
+) {
   // Set checkpoint
   if (promptsData.selectedCheckpoint) {
     workflow['10'].inputs.ckpt_name = promptsData.selectedCheckpoint
@@ -127,7 +126,7 @@ function applySeedsToWorkflow(workflow: ComfyUIWorkflow) {
   // Apply random seed to relevant KSamplers
   const seed = Math.floor(Math.random() * 10000000000000000)
   workflow['8'].inputs.seed = seed
-  
+
   if (workflow['17']) {
     workflow['17'].inputs.seed = seed + 1
   }
@@ -171,7 +170,7 @@ async function submitToComfyUI(
   settings: Settings,
   callbacks: {
     onLoadingChange: (loading: boolean) => void
-    onProgressUpdate: (progress: { value: number; max: number }) => void
+    onProgressUpdate: (progress: ProgressData) => void
     onImageReceived: (imageBlob: Blob, filePath: string) => void
     onError: (error: string) => void
   }
@@ -218,5 +217,5 @@ async function submitToComfyUI(
     onError: callbacks.onError
   }
 
-  await connectWebSocket(result.prompt_id, clientId, null, FINAL_SAVE_NODE_ID, wsCallbacks)
+  await connectWebSocket(result.prompt_id, clientId, FINAL_SAVE_NODE_ID, workflow, wsCallbacks)
 }

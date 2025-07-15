@@ -2,11 +2,11 @@
 <script lang="ts">
   import SettingsDialog from './SettingsDialog.svelte'
   import { Cog8Tooth } from 'svelte-heros-v2'
-  import type { Settings } from '$lib/types'
+  import type { Settings, ProgressData } from '$lib/types'
 
   interface Props {
     isLoading: boolean
-    progressData: { value: number; max: number }
+    progressData: ProgressData
     settings: Settings
     onGenerate: () => void
     onSettingsChange: (settings: Settings) => void
@@ -57,6 +57,11 @@
         {Math.round((progressData.value / progressData.max) * 100)}%
       </span>
     </div>
+    {#if progressData.currentNode}
+      <div class="current-node">
+        {progressData.currentNode}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -71,7 +76,7 @@
   .generation-controls {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0rem;
     width: 100%;
     margin-top: 1rem;
   }
@@ -143,6 +148,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+    margin-top: 1rem;
   }
 
   .progress-bar {
@@ -165,5 +171,12 @@
     color: #666;
     min-width: 40px;
     text-align: right;
+  }
+
+  .current-node {
+    font-size: 0.75rem;
+    color: #999;
+    text-align: left;
+    font-style: italic;
   }
 </style>

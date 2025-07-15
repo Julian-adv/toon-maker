@@ -25,3 +25,9 @@ export interface PromptsData {
   poseValue: string
   backgroundsValue: string
 }
+
+export interface ProgressData {
+  value: number
+  max: number
+  currentNode: string
+}

@@ -1,3 +1,13 @@
+// ComfyUI API communication utilities
+//
+// This module handles direct communication with ComfyUI server:
+// - Fetches available checkpoints from ComfyUI API
+// - Manages WebSocket connections for real-time progress updates
+// - Processes execution status and image data from ComfyUI
+// - Extracts node titles from workflow metadata for user-friendly display
+
+import type { ProgressData } from '$lib/types'
+
 export async function fetchCheckpoints(): Promise<string[]> {
   try {
     const response = await fetch('http://127.0.0.1:8188/object_info/CheckpointLoaderSimple')
@@ -27,7 +37,7 @@ export async function fetchCheckpoints(): Promise<string[]> {
 
 export interface WebSocketCallbacks {
   onLoadingChange: (loading: boolean) => void
-  onProgressUpdate: (progress: { value: number; max: number }) => void
+  onProgressUpdate: (progress: ProgressData) => void
   onImageReceived: (imageBlob: Blob) => void
   onError: (error: string) => void
 }
@@ -35,14 +45,22 @@ export interface WebSocketCallbacks {
 export function connectWebSocket(
   promptId: string,
   generatedClientId: string,
-  currentPromptId: string | null,
   finalSaveNodeId: string,
+  workflow: Record<string, { _meta?: { title?: string } }>,
   callbacks: WebSocketCallbacks
 ): void {
   const ws = new WebSocket(`ws://127.0.0.1:8188/ws?clientId=${generatedClientId}`)
   ws.binaryType = 'arraybuffer'
   
   let lastExecutingNode: string | null = null
+
+  // Function to get node title from workflow
+  function getNodeTitle(nodeId: string): string {
+    if (workflow[nodeId] && workflow[nodeId]._meta && workflow[nodeId]._meta.title) {
+      return workflow[nodeId]._meta.title
+    }
+    return nodeId // Fallback to node ID if no title
+  }
 
   ws.onopen = () => {
     console.log('WebSocket connection established')
@@ -62,6 +80,13 @@ export function connectWebSocket(
             console.log('Execution finished for prompt:', promptId)
             callbacks.onLoadingChange(false)
             ws.close()
+          } else {
+            // Update progress with current node info
+            callbacks.onProgressUpdate({
+              value: 0,
+              max: 100,
+              currentNode: getNodeTitle(data.node)
+            })
           }
         }
       } else if (message.type === 'executed') {
@@ -73,7 +98,8 @@ export function connectWebSocket(
         // Handle progress updates
         callbacks.onProgressUpdate({
           value: message.data.value,
-          max: message.data.max
+          max: message.data.max,
+          currentNode: lastExecutingNode ? getNodeTitle(lastExecutingNode) : ''
         })
       }
     } else if (event.data instanceof ArrayBuffer) {
