@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import OptionsEditDialog from './OptionsEditDialog.svelte'
 
   let {
     id,
@@ -30,6 +31,7 @@
   let selectedSuggestionIndex = $state(-1)
   let suggestionPosition = $state({ top: 0, left: 0 })
   let mirrorDiv: HTMLDivElement | null = null
+  let showEditDialog = $state(false)
 
   onMount(async () => {
     try {
@@ -218,53 +220,51 @@
     }, 150)
   }
 
-  function handleDelete() {
-    if (value) {
-      // Find the index of the current value in options
-      const currentIndex = options.indexOf(value)
-      
-      // Remove current value from options
-      const updatedOptions = options.filter(option => option !== value)
-      onOptionsChange(updatedOptions)
-      
-      // Select next available option if exists
-      if (updatedOptions.length > 0) {
-        let newSelectedValue = ''
-        
-        if (currentIndex >= 0) {
-          // Try to select the item at the same index, or the previous one if at the end
-          if (currentIndex < updatedOptions.length) {
-            newSelectedValue = updatedOptions[currentIndex]
-          } else if (currentIndex > 0) {
-            newSelectedValue = updatedOptions[currentIndex - 1]
-          } else {
-            newSelectedValue = updatedOptions[0]
-          }
-        } else {
-          // If current value wasn't in options, select the first one
-          newSelectedValue = updatedOptions[0]
-        }
-        
-        value = newSelectedValue
-        selectedValue = newSelectedValue
-        onValueChange(newSelectedValue)
-      } else {
-        // No options left, clear everything
-        value = ''
-        selectedValue = ''
-        onValueChange('')
-      }
-    }
+
+  function openEditDialog() {
+    showEditDialog = true
+  }
+
+  function closeEditDialog() {
+    showEditDialog = false
   }
 </script>
 
 <div class="input-group">
   <label for={id}>{label}</label>
-  <select class="select-control" bind:value={selectedValue} onchange={() => onValueChange(selectedValue)}>
-    {#each options as option (option)}
-      <option value={option}>{option.substring(0, 180)}</option>
-    {/each}
-  </select>
+  <div class="select-container">
+    <select
+      class="select-control"
+      bind:value={selectedValue}
+      onchange={() => onValueChange(selectedValue)}
+    >
+      {#each options as option (option)}
+        <option value={option}>{option.substring(0, 180)}</option>
+      {/each}
+    </select>
+    <button
+      type="button"
+      class="edit-button"
+      onclick={openEditDialog}
+      title="Edit options"
+      aria-label="Edit options"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path
+          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+  </div>
   <div class="textarea-container">
     <textarea
       {id}
@@ -298,23 +298,20 @@
       </div>
     {/if}
   </div>
-  
-  {#if value}
-    <button 
-      type="button" 
-      class="delete-button" 
-      onclick={handleDelete}
-      title="Delete current value"
-      aria-label="Delete current value"
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M3 6h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="10" y1="11" x2="10" y2="17" stroke-width="2" stroke-linecap="round"/>
-        <line x1="14" y1="11" x2="14" y2="17" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </button>
-  {/if}
+
+
+  <OptionsEditDialog
+    show={showEditDialog}
+    {label}
+    {options}
+    currentValue={selectedValue}
+    onClose={closeEditDialog}
+    {onOptionsChange}
+    onValueChange={(newValue) => {
+      selectedValue = newValue
+      onValueChange(newValue)
+    }}
+  />
 </div>
 
 <style>
@@ -331,14 +328,45 @@
     text-align: left;
   }
 
+  .select-container {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+
   .select-control {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 5px 10px;
     border-radius: 4px;
     border: 1px solid #ddd;
     font-size: 14px;
     background-color: #fff;
     box-sizing: border-box;
+  }
+
+  .edit-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0px;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 4px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #ddd;
+  }
+
+  .edit-button:hover {
+    background: #e8e8e8;
+  }
+
+  .edit-button:active {
+    transform: scale(0.95);
   }
 
   .textarea-container {
@@ -358,36 +386,6 @@
     background-color: #fff;
   }
 
-  .delete-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 6px;
-    background: #fee;
-    border: 1px solid #fcc;
-    border-radius: 4px;
-    color: #c33;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    align-self: flex-start;
-  }
-
-  .delete-button:hover {
-    background: #fcc;
-    border-color: #f99;
-    color: #a00;
-  }
-
-  .delete-button:active {
-    transform: scale(0.95);
-  }
-
-  .delete-button svg {
-    width: 14px;
-    height: 14px;
-  }
 
   .suggestions-dropdown {
     position: absolute;

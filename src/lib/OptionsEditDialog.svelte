@@ -1,0 +1,364 @@
+<!-- Dialog component for editing options list -->
+<script lang="ts">
+  interface Props {
+    show: boolean
+    label: string
+    options: string[]
+    currentValue: string
+    onClose: () => void
+    onOptionsChange: (options: string[]) => void
+    onValueChange: (value: string) => void
+  }
+
+  let { show, label, options, currentValue, onClose, onOptionsChange, onValueChange }: Props = $props()
+
+  let newOptionTitle = $state('')
+  let newOptionValue = $state(currentValue)
+
+  function handleDelete(index: number) {
+    const updatedOptions = options.filter((_, i) => i !== index)
+    onOptionsChange(updatedOptions)
+  }
+
+  function handleDeleteCurrentValue() {
+    const updatedOptions = options.filter(option => option !== currentValue)
+    onOptionsChange(updatedOptions)
+    
+    // Select the closest remaining option
+    if (updatedOptions.length > 0) {
+      const currentIndex = options.findIndex(option => option === currentValue)
+      let newIndex = currentIndex
+      if (currentIndex >= updatedOptions.length) {
+        newIndex = updatedOptions.length - 1
+      }
+      if (newIndex < 0) {
+        newIndex = 0
+      }
+      onValueChange(updatedOptions[newIndex])
+    } else {
+      onValueChange('')
+    }
+  }
+
+  function handleSave() {
+    if (newOptionValue.trim()) {
+      const updatedOptions = [...options, newOptionValue.trim()]
+      onOptionsChange(updatedOptions)
+      newOptionTitle = ''
+      newOptionValue = ''
+    }
+    onClose()
+  }
+</script>
+
+{#if show}
+  <div class="dialog-overlay" onclick={onClose} role="button" tabindex="0" onkeydown={(e) => e.key === 'Escape' && onClose()}>
+    <div class="dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+      <div class="dialog-header">
+        <h3>Edit {label} Option</h3>
+        <button 
+          type="button" 
+          class="close-button" 
+          onclick={onClose}
+          aria-label="Close dialog"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="dialog-body">
+        <div class="form-section">
+          <div class="form-group">
+            <label for="option-title">Title:</label>
+            <input 
+              id="option-title"
+              type="text" 
+              bind:value={newOptionTitle}
+              placeholder="Enter option title"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label for="option-value">Value:</label>
+            <textarea 
+              id="option-value"
+              bind:value={newOptionValue}
+              placeholder="Enter option value"
+              class="form-input"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+        
+        <div class="options-list">
+          {#each options as option, index (option)}
+            <div class="option-item">
+              <span class="option-text">{option}</span>
+              <button 
+                type="button" 
+                class="option-delete-btn"
+                onclick={() => handleDelete(index)}
+                aria-label="Delete option"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+          {/each}
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button 
+          type="button" 
+          class="delete-current-btn"
+          onclick={handleDeleteCurrentValue}
+          disabled={!currentValue || options.length === 0}
+        >
+          Delete Current Value
+        </button>
+        <div class="dialog-actions">
+          <button type="button" class="dialog-close-btn" onclick={onClose}>
+            Close
+          </button>
+          <button type="button" class="dialog-save-btn" onclick={handleSave}>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .dialog {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .dialog-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+  }
+
+  .close-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    color: #666;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .close-button:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  .dialog-body {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .option-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    gap: 0.5rem;
+  }
+
+  .option-text {
+    flex: 1;
+    font-size: 0.875rem;
+    color: #333;
+    word-break: break-word;
+  }
+
+  .option-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: none;
+    color: #dc3545;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .option-delete-btn:hover {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .dialog-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    border-top: 1px solid #eee;
+  }
+
+  .dialog-close-btn {
+    padding: 0.5rem 1rem;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .dialog-close-btn:hover {
+    background: #5a6268;
+  }
+
+  .delete-current-btn {
+    padding: 0.5rem 1rem;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .delete-current-btn:hover:not(:disabled) {
+    background: #c82333;
+  }
+
+  .delete-current-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  .form-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .form-section h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #555;
+    text-align: left;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    box-sizing: border-box;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+  }
+
+  .add-option-btn {
+    padding: 0.5rem 1rem;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .add-option-btn:hover:not(:disabled) {
+    background: #218838;
+  }
+
+  .add-option-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  .dialog-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .dialog-save-btn {
+    padding: 0.5rem 1rem;
+    background: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .dialog-save-btn:hover {
+    background: #1976d2;
+  }
+</style>
