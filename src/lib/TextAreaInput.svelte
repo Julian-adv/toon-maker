@@ -114,6 +114,9 @@
       }
 
       // Set position styles for accurate positioning
+      mirrorDiv.style.position = 'absolute'
+      mirrorDiv.style.top = '-9999px'
+      mirrorDiv.style.left = '-9999px'
       mirrorDiv.style.visibility = 'hidden'
     }
 
@@ -157,6 +160,7 @@
 
     value = beforeWord + suggestion + afterWord
     showSuggestions = false
+    onValueChange(value)
 
     // Set cursor position after the inserted suggestion
     setTimeout(() => {
