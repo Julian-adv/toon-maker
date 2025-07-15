@@ -60,6 +60,37 @@
     updated.useFaceDetailer = enabled
     onPromptsChange(updated)
   }
+
+  // Options update functions
+  function updateQualityOptions(options: string[]) {
+    const updated = { ...promptsData }
+    updated.qualityValues = options
+    onPromptsChange(updated)
+  }
+
+  function updateCharacterOptions(options: string[]) {
+    const updated = { ...promptsData }
+    updated.characterValues = options
+    onPromptsChange(updated)
+  }
+
+  function updateOutfitOptions(options: string[]) {
+    const updated = { ...promptsData }
+    updated.outfitValues = options
+    onPromptsChange(updated)
+  }
+
+  function updatePoseOptions(options: string[]) {
+    const updated = { ...promptsData }
+    updated.poseValues = options
+    onPromptsChange(updated)
+  }
+
+  function updateBackgroundsOptions(options: string[]) {
+    const updated = { ...promptsData }
+    updated.backgroundsValues = options
+    onPromptsChange(updated)
+  }
 </script>
 
 <div class="prompt-form">
@@ -73,6 +104,7 @@
       rows={3}
       selectedValue={promptsData.qualityValue}
       onValueChange={updateQualityValue}
+      onOptionsChange={updateQualityOptions}
     />
 
     <TextAreaInput
@@ -84,6 +116,7 @@
       rows={3}
       selectedValue={promptsData.characterValue}
       onValueChange={updateCharacterValue}
+      onOptionsChange={updateCharacterOptions}
     />
 
     <TextAreaInput
@@ -95,6 +128,7 @@
       rows={3}
       selectedValue={promptsData.outfitValue}
       onValueChange={updateOutfitValue}
+      onOptionsChange={updateOutfitOptions}
     />
 
     <TextAreaInput
@@ -106,6 +140,7 @@
       rows={3}
       selectedValue={promptsData.poseValue}
       onValueChange={updatePoseValue}
+      onOptionsChange={updatePoseOptions}
     />
 
     <TextAreaInput
@@ -117,6 +152,7 @@
       rows={3}
       selectedValue={promptsData.backgroundsValue}
       onValueChange={updateBackgroundsValue}
+      onOptionsChange={updateBackgroundsOptions}
     />
   </div>
 

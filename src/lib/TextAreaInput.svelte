@@ -9,7 +9,8 @@
     rows,
     options = [],
     selectedValue = $bindable(),
-    onValueChange
+    onValueChange,
+    onOptionsChange
   }: {
     id: string
     label: string
@@ -19,6 +20,7 @@
     options: string[]
     selectedValue: string
     onValueChange: (value: string) => void
+    onOptionsChange: (options: string[]) => void
   } = $props()
 
   let textareaElement: HTMLTextAreaElement
@@ -215,6 +217,45 @@
       selectedSuggestionIndex = -1
     }, 150)
   }
+
+  function handleDelete() {
+    if (value) {
+      // Find the index of the current value in options
+      const currentIndex = options.indexOf(value)
+      
+      // Remove current value from options
+      const updatedOptions = options.filter(option => option !== value)
+      onOptionsChange(updatedOptions)
+      
+      // Select next available option if exists
+      if (updatedOptions.length > 0) {
+        let newSelectedValue = ''
+        
+        if (currentIndex >= 0) {
+          // Try to select the item at the same index, or the previous one if at the end
+          if (currentIndex < updatedOptions.length) {
+            newSelectedValue = updatedOptions[currentIndex]
+          } else if (currentIndex > 0) {
+            newSelectedValue = updatedOptions[currentIndex - 1]
+          } else {
+            newSelectedValue = updatedOptions[0]
+          }
+        } else {
+          // If current value wasn't in options, select the first one
+          newSelectedValue = updatedOptions[0]
+        }
+        
+        value = newSelectedValue
+        selectedValue = newSelectedValue
+        onValueChange(newSelectedValue)
+      } else {
+        // No options left, clear everything
+        value = ''
+        selectedValue = ''
+        onValueChange('')
+      }
+    }
+  }
 </script>
 
 <div class="input-group">
@@ -257,6 +298,23 @@
       </div>
     {/if}
   </div>
+  
+  {#if value}
+    <button 
+      type="button" 
+      class="delete-button" 
+      onclick={handleDelete}
+      title="Delete current value"
+      aria-label="Delete current value"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M3 6h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="10" y1="11" x2="10" y2="17" stroke-width="2" stroke-linecap="round"/>
+        <line x1="14" y1="11" x2="14" y2="17" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  {/if}
 </div>
 
 <style>
@@ -289,6 +347,7 @@
   }
 
   textarea {
+    display: block;
     width: 100%;
     padding: 10px;
     border-radius: 4px;
@@ -297,6 +356,37 @@
     resize: vertical;
     box-sizing: border-box;
     background-color: #fff;
+  }
+
+  .delete-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 6px;
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 4px;
+    color: #c33;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+  }
+
+  .delete-button:hover {
+    background: #fcc;
+    border-color: #f99;
+    color: #a00;
+  }
+
+  .delete-button:active {
+    transform: scale(0.95);
+  }
+
+  .delete-button svg {
+    width: 14px;
+    height: 14px;
   }
 
   .suggestions-dropdown {
