@@ -7,12 +7,29 @@ import { connectWebSocket, type WebSocketCallbacks } from './comfyui'
 import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
 import type { PromptsData, Settings } from '$lib/types'
 
+// Workflow node interfaces
+interface WorkflowNodeInput {
+  [key: string]: string | number | boolean | [string, number] | undefined
+}
+
+interface WorkflowNode {
+  inputs: WorkflowNodeInput
+  class_type: string
+  _meta?: {
+    title?: string
+  }
+}
+
+interface ComfyUIWorkflow {
+  [nodeId: string]: WorkflowNode
+}
+
 export interface GenerationOptions {
   promptsData: PromptsData
   settings: Settings
   onLoadingChange: (loading: boolean) => void
   onProgressUpdate: (progress: { value: number; max: number }) => void
-  onImageReceived: (imageBlob: Blob) => void
+  onImageReceived: (imageBlob: Blob, filePath: string) => void
   onError: (error: string) => void
 }
 
@@ -77,7 +94,7 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
   }
 }
 
-function configureWorkflow(workflow: any, promptsData: PromptsData, settings: Settings) {
+function configureWorkflow(workflow: ComfyUIWorkflow, promptsData: PromptsData, settings: Settings) {
   // Set checkpoint
   if (promptsData.selectedCheckpoint) {
     workflow['10'].inputs.ckpt_name = promptsData.selectedCheckpoint
@@ -106,7 +123,7 @@ function configureWorkflow(workflow: any, promptsData: PromptsData, settings: Se
   }
 }
 
-function applySeedsToWorkflow(workflow: any) {
+function applySeedsToWorkflow(workflow: ComfyUIWorkflow) {
   // Apply random seed to relevant KSamplers
   const seed = Math.floor(Math.random() * 10000000000000000)
   workflow['8'].inputs.seed = seed
@@ -116,7 +133,7 @@ function applySeedsToWorkflow(workflow: any) {
   }
 }
 
-function addSaveImageWebsocketNode(workflow: any, promptsData: PromptsData) {
+function addSaveImageWebsocketNode(workflow: ComfyUIWorkflow, promptsData: PromptsData) {
   // Determine which node to use as image source based on upscale and face detailer settings
   let imageSourceNodeId: string
 
@@ -148,14 +165,14 @@ function addSaveImageWebsocketNode(workflow: any, promptsData: PromptsData) {
 }
 
 async function submitToComfyUI(
-  workflow: any,
+  workflow: ComfyUIWorkflow,
   clientId: string,
   promptsData: PromptsData,
   settings: Settings,
   callbacks: {
     onLoadingChange: (loading: boolean) => void
     onProgressUpdate: (progress: { value: number; max: number }) => void
-    onImageReceived: (imageBlob: Blob) => void
+    onImageReceived: (imageBlob: Blob, filePath: string) => void
     onError: (error: string) => void
   }
 ) {
@@ -189,17 +206,13 @@ async function submitToComfyUI(
     onLoadingChange: callbacks.onLoadingChange,
     onProgressUpdate: callbacks.onProgressUpdate,
     onImageReceived: async (imageBlob: Blob) => {
-      try {
-        const filePath = await saveImage(imageBlob, promptsData, settings.outputDirectory, workflow)
-        if (filePath) {
-          callbacks.onImageReceived(imageBlob)
-        } else {
-          // Fallback to blob URL if save failed
-          callbacks.onImageReceived(imageBlob)
-        }
-      } catch (error) {
-        console.error('Failed to save image:', error)
-        callbacks.onImageReceived(imageBlob)
+      const filePath = await saveImage(imageBlob, promptsData, settings.outputDirectory, workflow)
+      if (filePath) {
+        callbacks.onImageReceived(imageBlob, filePath)
+      } else {
+        // If saving returns null, use fallback path
+        const fallbackPath = `unsaved_${Date.now()}.png`
+        callbacks.onImageReceived(imageBlob, fallbackPath)
       }
     },
     onError: callbacks.onError

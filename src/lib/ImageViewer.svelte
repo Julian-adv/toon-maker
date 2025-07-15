@@ -19,9 +19,36 @@
     onMetadataLoad
   }: Props = $props()
 
+  let allFiles: string[] = $state([])
+  let currentIndex = $state(-1)
+
+  // Watch for outputDirectory changes and update file list
+  $effect(() => {
+    if (outputDirectory) {
+      updateFileList()
+    }
+  })
+
+  // Update file list and current index
+  export async function updateFileList() {
+    allFiles = await getImageList(outputDirectory)
+    if (currentImageFileName) {
+      currentIndex = allFiles.indexOf(currentImageFileName)
+    } else {
+      // If no current image but files exist, load the latest one
+      if (allFiles.length > 0 && !currentImageFileName) {
+        const latestFile = allFiles[allFiles.length - 1]
+        await updateImage(latestFile)
+        return
+      }
+      currentIndex = -1
+    }
+  }
+
+
   // Navigation functions
   async function goToPreviousImage() {
-    const allFiles = await getImageList(outputDirectory)
+    await updateFileList()
     if (allFiles.length === 0) return
 
     if (!currentImageFileName) {
@@ -39,7 +66,7 @@
   }
 
   async function goToNextImage() {
-    const allFiles = await getImageList(outputDirectory)
+    await updateFileList()
     if (allFiles.length === 0) return
 
     if (!currentImageFileName) {
@@ -59,6 +86,7 @@
   async function updateImage(filePath: string) {
     onImageChange(filePath)
     await loadImageMetadata(filePath)
+    await updateFileList()
   }
 
   async function loadImageMetadata(filePath: string) {
@@ -92,20 +120,24 @@
 </script>
 
 <div class="image-viewer">
-  <div class="image-container">
+  {#if imageUrl}
+    <img src={imageUrl} alt="" class="main-image" />
+  {:else}
+    <div class="placeholder">
+      <p>No image to display</p>
+    </div>
+  {/if}
+  
+  <div class="nav-controls">
     <button class="nav-button prev" onclick={goToPreviousImage} aria-label="Previous image">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
     
-    {#if imageUrl}
-      <img src={imageUrl} alt="" class="main-image" />
-    {:else}
-      <div class="placeholder">
-        <p>No image to display</p>
-      </div>
-    {/if}
+    <span class="image-counter">
+      {currentIndex >= 0 ? currentIndex + 1 : 0} / {allFiles.length}
+    </span>
     
     <button class="nav-button next" onclick={goToNextImage} aria-label="Next image">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -119,13 +151,26 @@
   .image-viewer {
     width: 100%;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
   }
 
-  .image-container {
-    position: relative;
+
+  .nav-controls {
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .image-counter {
+    font-size: 0.875rem;
+    color: #666;
+    font-weight: 500;
+    min-width: 60px;
+    text-align: center;
   }
 
   .main-image {
@@ -137,8 +182,6 @@
   }
 
   .nav-button {
-    position: absolute;
-    bottom: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -146,26 +189,17 @@
     height: 48px;
     border: none;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.025);
-    color: rgba(255, 255, 255, 0.5);
+    background: #f5f5f5;
+    color: #666;
     cursor: pointer;
     transition: all 0.2s ease;
-    z-index: 10;
-    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
-  }
-
-  .nav-button.prev {
-    left: 1rem;
-  }
-
-  .nav-button.next {
-    right: 1rem;
+    border: 1px solid #ddd;
   }
 
   .nav-button:hover {
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    transform: scale(1.1);
+    background: #e8e8e8;
+    border-color: #bbb;
+    transform: scale(1.05);
   }
 
   .nav-button:active {

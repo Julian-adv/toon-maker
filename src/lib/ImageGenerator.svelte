@@ -21,6 +21,7 @@
   let currentImageFileName = $state('')
   let progressData = $state({ value: 0, max: 100 })
   let availableCheckpoints: string[] = $state([])
+  let imageViewer: { updateFileList: () => Promise<void> } | undefined
 
   // Settings state
   let settings: Settings = $state({
@@ -110,12 +111,20 @@
       onProgressUpdate: (progress) => {
         progressData = progress
       },
-      onImageReceived: async (imageBlob) => {
+      onImageReceived: async (imageBlob, filePath) => {
         // Create blob URL for immediate display
         if (imageUrl && imageUrl.startsWith('blob:')) {
           URL.revokeObjectURL(imageUrl)
         }
         imageUrl = URL.createObjectURL(imageBlob)
+        
+        // Set the current image file name
+        currentImageFileName = filePath
+        
+        // Update file list after new image is generated
+        if (imageViewer?.updateFileList) {
+          await imageViewer.updateFileList()
+        }
       },
       onError: (error) => {
         console.error('Generation error:', error)
@@ -180,6 +189,7 @@
 
     <section class="image-section">
       <ImageViewer
+        bind:this={imageViewer}
         {imageUrl}
         {currentImageFileName}
         outputDirectory={settings.outputDirectory}
