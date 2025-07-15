@@ -1,12 +1,13 @@
 <!-- Component for displaying images with navigation and metadata loading -->
 <script lang="ts">
   import { getImageList, getImageMetadata } from './utils/fileIO'
-  import type { PromptsData } from '$lib/types'
+  import type { PromptsData, OptionItem } from '$lib/types'
 
   interface Props {
     imageUrl: string | null
     currentImageFileName: string
     outputDirectory: string
+    promptsData: PromptsData
     onImageChange: (filePath: string) => void
     onMetadataLoad: (metadata: PromptsData) => void
   }
@@ -15,6 +16,7 @@
     imageUrl,
     currentImageFileName,
     outputDirectory,
+    promptsData,
     onImageChange,
     onMetadataLoad
   }: Props = $props()
@@ -103,13 +105,23 @@
         const poseMatch = params.match(/Pose: ([^\n]*)/)?.[1]?.trim()
         const backgroundsMatch = params.match(/Backgrounds: ([^\n]*)/)?.[1]?.trim()
         
+        // Helper function to find matching option and create proper OptionItem
+        function findOrCreateOption(matchedValue: string, optionsArray: OptionItem[]): OptionItem {
+          const existingOption = optionsArray.find(item => item.value === matchedValue)
+          if (existingOption) {
+            return { title: existingOption.title, value: existingOption.value }
+          }
+          // If not found, create with value as title
+          return { title: matchedValue, value: matchedValue }
+        }
+
         // Create updated prompts data
         const updatedPrompts: Partial<PromptsData> = {}
-        if (qualityMatch) updatedPrompts.qualityValue = { title: qualityMatch, value: qualityMatch }
-        if (characterMatch) updatedPrompts.characterValue = { title: characterMatch, value: characterMatch }
-        if (outfitMatch) updatedPrompts.outfitValue = { title: outfitMatch, value: outfitMatch }
-        if (poseMatch) updatedPrompts.poseValue = { title: poseMatch, value: poseMatch }
-        if (backgroundsMatch) updatedPrompts.backgroundsValue = { title: backgroundsMatch, value: backgroundsMatch }
+        if (qualityMatch) updatedPrompts.qualityValue = findOrCreateOption(qualityMatch, promptsData.qualityValues)
+        if (characterMatch) updatedPrompts.characterValue = findOrCreateOption(characterMatch, promptsData.characterValues)
+        if (outfitMatch) updatedPrompts.outfitValue = findOrCreateOption(outfitMatch, promptsData.outfitValues)
+        if (poseMatch) updatedPrompts.poseValue = findOrCreateOption(poseMatch, promptsData.poseValues)
+        if (backgroundsMatch) updatedPrompts.backgroundsValue = findOrCreateOption(backgroundsMatch, promptsData.backgroundsValues)
         
         onMetadataLoad(updatedPrompts as PromptsData)
       }

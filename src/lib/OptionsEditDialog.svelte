@@ -5,16 +5,32 @@
     show: boolean
     label: string
     options: OptionItem[]
-    currentValue: OptionItem
+    value: OptionItem
     onClose: () => void
     onOptionsChange: (options: OptionItem[]) => void
-    onValueChange: (value: string) => void
+    onValueChange: (value: OptionItem) => void
   }
 
-  let { show, label, options, currentValue, onClose, onOptionsChange, onValueChange }: Props = $props()
+  let {
+    show,
+    label,
+    options,
+    value = $bindable(),
+    onClose,
+    onOptionsChange,
+    onValueChange
+  }: Props = $props()
 
-  let newOptionTitle = $state(currentValue.title)
-  let newOptionValue = $state(currentValue.value)
+  let newOptionTitle = $state(value.title)
+  let newOptionValue = $state(value.value)
+
+  // Update form values when dialog opens
+  $effect(() => {
+    if (show) {
+      newOptionTitle = value.title || ''
+      newOptionValue = value.value || ''
+    }
+  })
 
   function handleDelete(index: number) {
     const updatedOptions = options.filter((_, i) => i !== index)
@@ -22,12 +38,12 @@
   }
 
   function handleDeleteCurrentValue() {
-    const updatedOptions = options.filter(option => option.value !== currentValue.value)
+    const updatedOptions = options.filter((option) => option.title !== value.title)
     onOptionsChange(updatedOptions)
-    
+
     // Select the closest remaining option
     if (updatedOptions.length > 0) {
-      const currentIndex = options.findIndex(option => option.value === currentValue.value)
+      const currentIndex = options.findIndex((option) => option.title === value.title)
       let newIndex = currentIndex
       if (currentIndex >= updatedOptions.length) {
         newIndex = updatedOptions.length - 1
@@ -35,9 +51,12 @@
       if (newIndex < 0) {
         newIndex = 0
       }
-      onValueChange(updatedOptions[newIndex].value)
+      value = updatedOptions[newIndex]
+      onValueChange(value)
     } else {
-      onValueChange('')
+      value.title = ''
+      value.value = ''
+      onValueChange(value)
     }
   }
 
@@ -57,19 +76,26 @@
 </script>
 
 {#if show}
-  <div class="dialog-overlay" onclick={onClose} role="button" tabindex="0" onkeydown={(e) => e.key === 'Escape' && onClose()}>
-    <div class="dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+  <div
+    class="dialog-overlay"
+    onclick={onClose}
+    role="button"
+    tabindex="0"
+    onkeydown={(e) => e.key === 'Escape' && onClose()}
+  >
+    <div
+      class="dialog"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+      role="dialog"
+      tabindex="-1"
+    >
       <div class="dialog-header">
         <h3>Edit {label} Option</h3>
-        <button 
-          type="button" 
-          class="close-button" 
-          onclick={onClose}
-          aria-label="Close dialog"
-        >
+        <button type="button" class="close-button" onclick={onClose} aria-label="Close dialog">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round"/>
-            <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round"/>
+            <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round" />
+            <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round" />
           </svg>
         </button>
       </div>
@@ -77,9 +103,9 @@
         <div class="form-section">
           <div class="form-group">
             <label for="option-title">Title:</label>
-            <input 
+            <input
               id="option-title"
-              type="text" 
+              type="text"
               bind:value={newOptionTitle}
               placeholder="Enter option title"
               class="form-input"
@@ -87,7 +113,7 @@
           </div>
           <div class="form-group">
             <label for="option-value">Value:</label>
-            <textarea 
+            <textarea
               id="option-value"
               bind:value={newOptionValue}
               placeholder="Enter option value"
@@ -96,20 +122,20 @@
             ></textarea>
           </div>
         </div>
-        
+
         <div class="options-list">
           {#each options as option, index (option.value)}
             <div class="option-item">
               <span class="option-text">{option.title}</span>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 class="option-delete-btn"
                 onclick={() => handleDelete(index)}
                 aria-label="Delete option"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round"/>
-                  <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round"/>
+                  <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round" />
+                  <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round" />
                 </svg>
               </button>
             </div>
@@ -117,21 +143,17 @@
         </div>
       </div>
       <div class="dialog-footer">
-        <button 
-          type="button" 
+        <button
+          type="button"
           class="delete-current-btn"
           onclick={handleDeleteCurrentValue}
-          disabled={!currentValue.value || options.length === 0}
+          disabled={!value.value || options.length === 0}
         >
           Delete Current Value
         </button>
         <div class="dialog-actions">
-          <button type="button" class="dialog-close-btn" onclick={onClose}>
-            Close
-          </button>
-          <button type="button" class="dialog-save-btn" onclick={handleSave}>
-            Save
-          </button>
+          <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
+          <button type="button" class="dialog-save-btn" onclick={handleSave}> Save </button>
         </div>
       </div>
     </div>
@@ -294,12 +316,6 @@
     border-bottom: 1px solid #eee;
   }
 
-  .form-section h4 {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
-    color: #333;
-  }
-
   .form-group {
     margin-bottom: 1rem;
   }
@@ -325,26 +341,6 @@
     outline: none;
     border-color: #2196f3;
     box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-  }
-
-  .add-option-btn {
-    padding: 0.5rem 1rem;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-  }
-
-  .add-option-btn:hover:not(:disabled) {
-    background: #218838;
-  }
-
-  .add-option-btn:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
   }
 
   .dialog-actions {

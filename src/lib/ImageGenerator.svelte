@@ -213,6 +213,7 @@
         {imageUrl}
         {currentImageFileName}
         outputDirectory={settings.outputDirectory}
+        {promptsData}
         onImageChange={handleImageChange}
         onMetadataLoad={handleMetadataLoad}
       />

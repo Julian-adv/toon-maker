@@ -232,8 +232,8 @@
       onchange={() => {
         const matchedOption = options.find((opt) => opt.title === value.title)
         if (matchedOption) {
-          value.value = value.value
-          onValueChange(matchedOption)
+          value = { ...matchedOption }
+          onValueChange(value)
         }
       }}
     >
@@ -302,14 +302,10 @@
     show={showEditDialog}
     {label}
     {options}
-    currentValue={value}
+    bind:value
     onClose={closeEditDialog}
     {onOptionsChange}
-    onValueChange={(newValue) => {
-      const newOption = { title: newValue, value: newValue }
-      value = newOption
-      onValueChange(newOption)
-    }}
+    {onValueChange}
   />
 </div>
 
