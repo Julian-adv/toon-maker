@@ -105,11 +105,11 @@
         
         // Create updated prompts data
         const updatedPrompts: Partial<PromptsData> = {}
-        if (qualityMatch) updatedPrompts.qualityValue = qualityMatch
-        if (characterMatch) updatedPrompts.characterValue = characterMatch
-        if (outfitMatch) updatedPrompts.outfitValue = outfitMatch
-        if (poseMatch) updatedPrompts.poseValue = poseMatch
-        if (backgroundsMatch) updatedPrompts.backgroundsValue = backgroundsMatch
+        if (qualityMatch) updatedPrompts.qualityValue = { title: qualityMatch, value: qualityMatch }
+        if (characterMatch) updatedPrompts.characterValue = { title: characterMatch, value: characterMatch }
+        if (outfitMatch) updatedPrompts.outfitValue = { title: outfitMatch, value: outfitMatch }
+        if (poseMatch) updatedPrompts.poseValue = { title: poseMatch, value: poseMatch }
+        if (backgroundsMatch) updatedPrompts.backgroundsValue = { title: backgroundsMatch, value: backgroundsMatch }
         
         onMetadataLoad(updatedPrompts as PromptsData)
       }

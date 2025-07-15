@@ -47,11 +47,11 @@ export async function GET() {
         selectedCheckpoint: null,
         useUpscale: true,
         useFaceDetailer: true,
-        qualityValue: '',
-        characterValue: '',
-        outfitValue: '',
-        poseValue: '',
-        backgroundsValue: ''
+        qualityValue: { title: '', value: '' },
+        characterValue: { title: '', value: '' },
+        outfitValue: { title: '', value: '' },
+        poseValue: { title: '', value: '' },
+        backgroundsValue: { title: '', value: '' }
       };
       return json(defaultPrompts);
     }

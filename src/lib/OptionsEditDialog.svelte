@@ -1,19 +1,20 @@
 <!-- Dialog component for editing options list -->
 <script lang="ts">
+  import type { OptionItem } from './types'
   interface Props {
     show: boolean
     label: string
-    options: string[]
-    currentValue: string
+    options: OptionItem[]
+    currentValue: OptionItem
     onClose: () => void
-    onOptionsChange: (options: string[]) => void
+    onOptionsChange: (options: OptionItem[]) => void
     onValueChange: (value: string) => void
   }
 
   let { show, label, options, currentValue, onClose, onOptionsChange, onValueChange }: Props = $props()
 
-  let newOptionTitle = $state('')
-  let newOptionValue = $state(currentValue)
+  let newOptionTitle = $state(currentValue.title)
+  let newOptionValue = $state(currentValue.value)
 
   function handleDelete(index: number) {
     const updatedOptions = options.filter((_, i) => i !== index)
@@ -21,12 +22,12 @@
   }
 
   function handleDeleteCurrentValue() {
-    const updatedOptions = options.filter(option => option !== currentValue)
+    const updatedOptions = options.filter(option => option.value !== currentValue.value)
     onOptionsChange(updatedOptions)
     
     // Select the closest remaining option
     if (updatedOptions.length > 0) {
-      const currentIndex = options.findIndex(option => option === currentValue)
+      const currentIndex = options.findIndex(option => option.value === currentValue.value)
       let newIndex = currentIndex
       if (currentIndex >= updatedOptions.length) {
         newIndex = updatedOptions.length - 1
@@ -34,7 +35,7 @@
       if (newIndex < 0) {
         newIndex = 0
       }
-      onValueChange(updatedOptions[newIndex])
+      onValueChange(updatedOptions[newIndex].value)
     } else {
       onValueChange('')
     }
@@ -42,7 +43,11 @@
 
   function handleSave() {
     if (newOptionValue.trim()) {
-      const updatedOptions = [...options, newOptionValue.trim()]
+      const newOption: OptionItem = {
+        title: newOptionTitle.trim() || newOptionValue.trim(),
+        value: newOptionValue.trim()
+      }
+      const updatedOptions = [...options, newOption]
       onOptionsChange(updatedOptions)
       newOptionTitle = ''
       newOptionValue = ''
@@ -93,9 +98,9 @@
         </div>
         
         <div class="options-list">
-          {#each options as option, index (option)}
+          {#each options as option, index (option.value)}
             <div class="option-item">
-              <span class="option-text">{option}</span>
+              <span class="option-text">{option.title}</span>
               <button 
                 type="button" 
                 class="option-delete-btn"
@@ -116,7 +121,7 @@
           type="button" 
           class="delete-current-btn"
           onclick={handleDeleteCurrentValue}
-          disabled={!currentValue || options.length === 0}
+          disabled={!currentValue.value || options.length === 0}
         >
           Delete Current Value
         </button>

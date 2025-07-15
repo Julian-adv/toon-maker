@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import type { OptionItem } from './types'
   import OptionsEditDialog from './OptionsEditDialog.svelte'
 
   let {
@@ -9,19 +10,17 @@
     placeholder,
     rows,
     options = [],
-    selectedValue = $bindable(),
     onValueChange,
     onOptionsChange
   }: {
     id: string
     label: string
-    value: string
+    value: OptionItem
     placeholder: string
     rows: number
-    options: string[]
-    selectedValue: string
-    onValueChange: (value: string) => void
-    onOptionsChange: (options: string[]) => void
+    options: OptionItem[]
+    onValueChange: (value: OptionItem) => void
+    onOptionsChange: (options: OptionItem[]) => void
   } = $props()
 
   let textareaElement: HTMLTextAreaElement
@@ -42,15 +41,9 @@
     }
   })
 
-  $effect(() => {
-    if (selectedValue) {
-      value = selectedValue
-    }
-  })
-
   function getCurrentWord(): { word: string; startIndex: number } {
     const cursorPosition = textareaElement.selectionStart
-    const text = value
+    const text = value.value
 
     // Find the start of the current word (looking for spaces or commas)
     let startIndex = cursorPosition - 1
@@ -159,10 +152,11 @@
 
   function insertSuggestion(suggestion: string) {
     const { word, startIndex } = getCurrentWord()
-    const beforeWord = value.substring(0, startIndex)
-    const afterWord = value.substring(startIndex + word.length)
+    const beforeWord = value.value.substring(0, startIndex)
+    const afterWord = value.value.substring(startIndex + word.length)
 
-    value = beforeWord + suggestion + afterWord
+    const newValue = beforeWord + suggestion + afterWord
+    value.value = newValue
     showSuggestions = false
     onValueChange(value)
 
@@ -220,7 +214,6 @@
     }, 150)
   }
 
-
   function openEditDialog() {
     showEditDialog = true
   }
@@ -235,11 +228,17 @@
   <div class="select-container">
     <select
       class="select-control"
-      bind:value={selectedValue}
-      onchange={() => onValueChange(selectedValue)}
+      bind:value={value.title}
+      onchange={() => {
+        const matchedOption = options.find((opt) => opt.title === value.title)
+        if (matchedOption) {
+          value.value = value.value
+          onValueChange(matchedOption)
+        }
+      }}
     >
-      {#each options as option (option)}
-        <option value={option}>{option.substring(0, 180)}</option>
+      {#each options as option (option.title)}
+        <option value={option.title}>{option.title.substring(0, 180)}</option>
       {/each}
     </select>
     <button
@@ -269,7 +268,7 @@
     <textarea
       {id}
       bind:this={textareaElement}
-      bind:value
+      bind:value={value.value}
       {placeholder}
       {rows}
       oninput={handleInput}
@@ -299,17 +298,17 @@
     {/if}
   </div>
 
-
   <OptionsEditDialog
     show={showEditDialog}
     {label}
     {options}
-    currentValue={selectedValue}
+    currentValue={value}
     onClose={closeEditDialog}
     {onOptionsChange}
     onValueChange={(newValue) => {
-      selectedValue = newValue
-      onValueChange(newValue)
+      const newOption = { title: newValue, value: newValue }
+      value = newOption
+      onValueChange(newOption)
     }}
   />
 </div>
@@ -385,7 +384,6 @@
     box-sizing: border-box;
     background-color: #fff;
   }
-
 
   .suggestions-dropdown {
     position: absolute;

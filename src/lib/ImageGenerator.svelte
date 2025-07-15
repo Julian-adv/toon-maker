@@ -44,11 +44,11 @@
     selectedCheckpoint: null,
     useUpscale: false,
     useFaceDetailer: false,
-    qualityValue: '',
-    characterValue: '',
-    outfitValue: '',
-    poseValue: '',
-    backgroundsValue: ''
+    qualityValue: { title: '', value: '' },
+    characterValue: { title: '', value: '' },
+    outfitValue: { title: '', value: '' },
+    poseValue: { title: '', value: '' },
+    backgroundsValue: { title: '', value: '' }
   })
 
   // Initialize component
@@ -75,33 +75,57 @@
     }
   })
 
-
   // Event handlers
   async function handleGenerate() {
     // Add current values to options if they're not already there
     const updated = { ...promptsData }
-    
-    if (updated.qualityValue && !updated.qualityValues.includes(updated.qualityValue)) {
-      updated.qualityValues = [...updated.qualityValues, updated.qualityValue]
+
+    if (updated.qualityValue) {
+      const existingOption = updated.qualityValues.find(
+        (item) => item.title === updated.qualityValue.title
+      )
+      if (existingOption) {
+        existingOption.value = updated.qualityValue.value
+      }
     }
-    if (updated.characterValue && !updated.characterValues.includes(updated.characterValue)) {
-      updated.characterValues = [...updated.characterValues, updated.characterValue]
+    if (updated.characterValue) {
+      const existingOption = updated.characterValues.find(
+        (item) => item.title === updated.characterValue.title
+      )
+      if (existingOption) {
+        existingOption.value = updated.characterValue.value
+      }
     }
-    if (updated.outfitValue && !updated.outfitValues.includes(updated.outfitValue)) {
-      updated.outfitValues = [...updated.outfitValues, updated.outfitValue]
+    if (updated.outfitValue) {
+      const existingOption = updated.outfitValues.find(
+        (item) => item.title === updated.outfitValue.title
+      )
+      if (existingOption) {
+        existingOption.value = updated.outfitValue.value
+      }
     }
-    if (updated.poseValue && !updated.poseValues.includes(updated.poseValue)) {
-      updated.poseValues = [...updated.poseValues, updated.poseValue]
+    if (updated.poseValue) {
+      const existingOption = updated.poseValues.find(
+        (item) => item.title === updated.poseValue.title
+      )
+      if (existingOption) {
+        existingOption.value = updated.poseValue.value
+      }
     }
-    if (updated.backgroundsValue && !updated.backgroundsValues.includes(updated.backgroundsValue)) {
-      updated.backgroundsValues = [...updated.backgroundsValues, updated.backgroundsValue]
+    if (updated.backgroundsValue) {
+      const existingOption = updated.backgroundsValues.find(
+        (item) => item.title === updated.backgroundsValue.title
+      )
+      if (existingOption) {
+        existingOption.value = updated.backgroundsValue.value
+      }
     }
-    
+
     promptsData = updated
-    
+
     // Save prompts before generating
     savePrompts(promptsData)
-    
+
     await generateImage({
       promptsData,
       settings,
@@ -117,10 +141,10 @@
           URL.revokeObjectURL(imageUrl)
         }
         imageUrl = URL.createObjectURL(imageBlob)
-        
+
         // Set the current image file name
         currentImageFileName = filePath
-        
+
         // Update file list after new image is generated
         if (imageViewer?.updateFileList) {
           await imageViewer.updateFileList()
@@ -172,12 +196,8 @@
 <main class="prompt-input">
   <div class="content-grid">
     <section class="form-section">
-      <PromptForm 
-        {promptsData}
-        {availableCheckpoints}
-        onPromptsChange={handlePromptsChange}
-      />
-      
+      <PromptForm bind:promptsData {availableCheckpoints} onPromptsChange={handlePromptsChange} />
+
       <GenerationControls
         {isLoading}
         {progressData}
@@ -231,11 +251,9 @@
     min-width: 0;
   }
 
-
   @media (max-width: 768px) {
     .prompt-input {
       padding: 1rem;
     }
-    
   }
 </style>

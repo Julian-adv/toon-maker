@@ -40,11 +40,11 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
   try {
     // Build the combined prompt
     const promptValue = [
-      promptsData.qualityValue,
-      promptsData.characterValue,
-      promptsData.outfitValue,
-      promptsData.poseValue,
-      promptsData.backgroundsValue
+      promptsData.qualityValue.value,
+      promptsData.characterValue.value,
+      promptsData.outfitValue.value,
+      promptsData.poseValue.value,
+      promptsData.backgroundsValue.value
     ]
       .filter(Boolean)
       .join(', ')

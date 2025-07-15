@@ -1,5 +1,10 @@
 // Common type definitions used across the application
 
+export interface OptionItem {
+  title: string
+  value: string
+}
+
 export interface Settings {
   imageWidth: number
   imageHeight: number
@@ -11,19 +16,19 @@ export interface Settings {
 }
 
 export interface PromptsData {
-  qualityValues: string[]
-  characterValues: string[]
-  outfitValues: string[]
-  poseValues: string[]
-  backgroundsValues: string[]
+  qualityValues: OptionItem[]
+  characterValues: OptionItem[]
+  outfitValues: OptionItem[]
+  poseValues: OptionItem[]
+  backgroundsValues: OptionItem[]
   selectedCheckpoint: string | null
   useUpscale: boolean
   useFaceDetailer: boolean
-  qualityValue: string
-  characterValue: string
-  outfitValue: string
-  poseValue: string
-  backgroundsValue: string
+  qualityValue: OptionItem
+  characterValue: OptionItem
+  outfitValue: OptionItem
+  poseValue: OptionItem
+  backgroundsValue: OptionItem
 }
 
 export interface ProgressData {

@@ -1,6 +1,7 @@
 <!-- Component for prompt input forms and checkpoint selection -->
 <script lang="ts">
   import TextAreaInput from './TextAreaInput.svelte'
+  import type { OptionItem } from './types'
   import type { PromptsData } from '$lib/types'
 
   interface Props {
@@ -9,35 +10,35 @@
     onPromptsChange: (data: PromptsData) => void
   }
 
-  let { promptsData, availableCheckpoints, onPromptsChange }: Props = $props()
+  let { promptsData = $bindable(), availableCheckpoints, onPromptsChange }: Props = $props()
 
   // Update functions for form inputs
 
-  function updateQualityValue(value: string) {
+  function updateQualityValue(value: OptionItem) {
     const updated = { ...promptsData }
     updated.qualityValue = value
     onPromptsChange(updated)
   }
 
-  function updateCharacterValue(value: string) {
+  function updateCharacterValue(value: OptionItem) {
     const updated = { ...promptsData }
     updated.characterValue = value
     onPromptsChange(updated)
   }
 
-  function updateOutfitValue(value: string) {
+  function updateOutfitValue(value: OptionItem) {
     const updated = { ...promptsData }
     updated.outfitValue = value
     onPromptsChange(updated)
   }
 
-  function updatePoseValue(value: string) {
+  function updatePoseValue(value: OptionItem) {
     const updated = { ...promptsData }
     updated.poseValue = value
     onPromptsChange(updated)
   }
 
-  function updateBackgroundsValue(value: string) {
+  function updateBackgroundsValue(value: OptionItem) {
     const updated = { ...promptsData }
     updated.backgroundsValue = value
     onPromptsChange(updated)
@@ -62,31 +63,31 @@
   }
 
   // Options update functions
-  function updateQualityOptions(options: string[]) {
+  function updateQualityOptions(options: OptionItem[]) {
     const updated = { ...promptsData }
     updated.qualityValues = options
     onPromptsChange(updated)
   }
 
-  function updateCharacterOptions(options: string[]) {
+  function updateCharacterOptions(options: OptionItem[]) {
     const updated = { ...promptsData }
     updated.characterValues = options
     onPromptsChange(updated)
   }
 
-  function updateOutfitOptions(options: string[]) {
+  function updateOutfitOptions(options: OptionItem[]) {
     const updated = { ...promptsData }
     updated.outfitValues = options
     onPromptsChange(updated)
   }
 
-  function updatePoseOptions(options: string[]) {
+  function updatePoseOptions(options: OptionItem[]) {
     const updated = { ...promptsData }
     updated.poseValues = options
     onPromptsChange(updated)
   }
 
-  function updateBackgroundsOptions(options: string[]) {
+  function updateBackgroundsOptions(options: OptionItem[]) {
     const updated = { ...promptsData }
     updated.backgroundsValues = options
     onPromptsChange(updated)
@@ -99,10 +100,9 @@
       id="quality"
       label="Quality"
       placeholder="Quality settings..."
-      value={promptsData.qualityValue}
+      bind:value={promptsData.qualityValue}
       options={promptsData.qualityValues}
       rows={3}
-      selectedValue={promptsData.qualityValue}
       onValueChange={updateQualityValue}
       onOptionsChange={updateQualityOptions}
     />
@@ -111,10 +111,9 @@
       id="character"
       label="Character"
       placeholder="Character description..."
-      value={promptsData.characterValue}
+      bind:value={promptsData.characterValue}
       options={promptsData.characterValues}
       rows={3}
-      selectedValue={promptsData.characterValue}
       onValueChange={updateCharacterValue}
       onOptionsChange={updateCharacterOptions}
     />
@@ -123,10 +122,9 @@
       id="outfit"
       label="Outfit"
       placeholder="Outfit description..."
-      value={promptsData.outfitValue}
+      bind:value={promptsData.outfitValue}
       options={promptsData.outfitValues}
       rows={3}
-      selectedValue={promptsData.outfitValue}
       onValueChange={updateOutfitValue}
       onOptionsChange={updateOutfitOptions}
     />
@@ -135,10 +133,9 @@
       id="pose"
       label="Pose"
       placeholder="Pose description..."
-      value={promptsData.poseValue}
+      bind:value={promptsData.poseValue}
       options={promptsData.poseValues}
       rows={3}
-      selectedValue={promptsData.poseValue}
       onValueChange={updatePoseValue}
       onOptionsChange={updatePoseOptions}
     />
@@ -147,10 +144,9 @@
       id="backgrounds"
       label="Backgrounds"
       placeholder="Background description..."
-      value={promptsData.backgroundsValue}
+      bind:value={promptsData.backgroundsValue}
       options={promptsData.backgroundsValues}
       rows={3}
-      selectedValue={promptsData.backgroundsValue}
       onValueChange={updateBackgroundsValue}
       onOptionsChange={updateBackgroundsOptions}
     />
