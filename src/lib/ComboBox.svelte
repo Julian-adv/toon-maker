@@ -68,7 +68,17 @@
   }
 
   function handleFocus() {
-    updateDropdown()
+    // Show all options on first focus, without filtering
+    filteredOptions = options
+    showDropdown = options.length > 0
+    selectedIndex = -1
+  }
+
+  function handleClick() {
+    // Show all options when clicked, even if already focused
+    filteredOptions = options
+    showDropdown = options.length > 0
+    selectedIndex = -1
   }
 
   function handleBlur() {
@@ -90,6 +100,7 @@
     oninput={handleInput}
     onkeydown={handleKeydown}
     onfocus={handleFocus}
+    onclick={handleClick}
     onblur={handleBlur}
   />
   

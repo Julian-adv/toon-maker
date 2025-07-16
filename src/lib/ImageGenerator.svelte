@@ -86,6 +86,8 @@
       )
       if (existingOption) {
         existingOption.value = updated.qualityValue.value
+      } else {
+        updated.qualityValues.push({ ...updated.qualityValue })
       }
     }
     if (updated.characterValue) {
@@ -94,6 +96,8 @@
       )
       if (existingOption) {
         existingOption.value = updated.characterValue.value
+      } else {
+        updated.characterValues.push({ ...updated.characterValue })
       }
     }
     if (updated.outfitValue) {
@@ -102,6 +106,8 @@
       )
       if (existingOption) {
         existingOption.value = updated.outfitValue.value
+      } else {
+        updated.outfitValues.push({ ...updated.outfitValue })
       }
     }
     if (updated.poseValue) {
@@ -110,6 +116,8 @@
       )
       if (existingOption) {
         existingOption.value = updated.poseValue.value
+      } else {
+        updated.poseValues.push({ ...updated.poseValue })
       }
     }
     if (updated.backgroundsValue) {
@@ -118,6 +126,8 @@
       )
       if (existingOption) {
         existingOption.value = updated.backgroundsValue.value
+      } else {
+        updated.backgroundsValues.push({ ...updated.backgroundsValue })
       }
     }
 
