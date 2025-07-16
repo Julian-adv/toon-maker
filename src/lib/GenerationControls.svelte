@@ -53,7 +53,7 @@
     </button>
 
     <button
-      class="generate-forever-btn border border-sky-200 bg-sky-50 text-sky-400"
+      class="generate-forever-btn border border-sky-200 bg-sky-50 text-sky-400 hover:not-disabled:bg-sky-200 disabled:text-sky-100"
       onclick={isGeneratingForever ? onStopGeneration : onGenerateForever}
       disabled={isLoading && !isGeneratingForever}
     >
@@ -160,7 +160,6 @@
   }
 
   .generate-forever-btn:hover:not(:disabled) {
-    background: #45a049;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
