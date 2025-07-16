@@ -4,16 +4,20 @@
   import ImageViewer from './ImageViewer.svelte'
   import PromptForm from './PromptForm.svelte'
   import GenerationControls from './GenerationControls.svelte'
-  import type { Settings, PromptsData, ProgressData } from '$lib/types'
+  import type { Settings, ProgressData, PromptsData } from '$lib/types'
   import {
-    savePrompts,
-    loadPrompts,
     loadSettings,
     saveSettings as saveSettingsToFile
   } from './utils/fileIO'
   import { fetchCheckpoints } from './utils/comfyui'
   import { generateImage } from './utils/imageGeneration'
   import { DEFAULT_OUTPUT_DIRECTORY } from '$lib/constants'
+  import { 
+    promptsData, 
+    initializePromptsStore, 
+    savePromptsData, 
+    autoSaveCurrentValues 
+  } from './stores/promptsStore'
 
   // Component state
   let isLoading = $state(false)
@@ -36,30 +40,12 @@
     outputDirectory: DEFAULT_OUTPUT_DIRECTORY
   })
 
-  // Prompts state
-  let promptsData: PromptsData = $state({
-    qualityValues: [],
-    characterValues: [],
-    outfitValues: [],
-    poseValues: [],
-    backgroundsValues: [],
-    selectedCheckpoint: null,
-    useUpscale: false,
-    useFaceDetailer: false,
-    qualityValue: { title: '', value: '' },
-    characterValue: { title: '', value: '' },
-    outfitValue: { title: '', value: '' },
-    poseValue: { title: '', value: '' },
-    backgroundsValue: { title: '', value: '' }
-  })
+  // Prompts state is now managed by the central store
 
   // Initialize component
   onMount(async () => {
-    // Load saved prompts
-    const savedPrompts = await loadPrompts()
-    if (savedPrompts) {
-      promptsData = savedPrompts
-    }
+    // Initialize prompts store
+    await initializePromptsStore()
 
     // Load settings
     const savedSettings = await loadSettings()
@@ -71,75 +57,28 @@
     const checkpoints = await fetchCheckpoints()
     if (checkpoints && checkpoints.length > 0) {
       availableCheckpoints = checkpoints
-      if (!promptsData.selectedCheckpoint && checkpoints.length > 0) {
-        promptsData.selectedCheckpoint = checkpoints[0]
-      }
+      promptsData.update(data => {
+        if (!data.selectedCheckpoint && checkpoints.length > 0) {
+          return { ...data, selectedCheckpoint: checkpoints[0] }
+        }
+        return data
+      })
     }
   })
 
   // Event handlers
   async function handleGenerate() {
     // Add current values to options if they're not already there
-    const updated = { ...promptsData }
-
-    if (updated.qualityValue) {
-      const existingOption = updated.qualityValues.find(
-        (item) => item.title === updated.qualityValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.qualityValue.value
-      } else {
-        updated.qualityValues.push({ ...updated.qualityValue })
-      }
-    }
-    if (updated.characterValue) {
-      const existingOption = updated.characterValues.find(
-        (item) => item.title === updated.characterValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.characterValue.value
-      } else {
-        updated.characterValues.push({ ...updated.characterValue })
-      }
-    }
-    if (updated.outfitValue) {
-      const existingOption = updated.outfitValues.find(
-        (item) => item.title === updated.outfitValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.outfitValue.value
-      } else {
-        updated.outfitValues.push({ ...updated.outfitValue })
-      }
-    }
-    if (updated.poseValue) {
-      const existingOption = updated.poseValues.find(
-        (item) => item.title === updated.poseValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.poseValue.value
-      } else {
-        updated.poseValues.push({ ...updated.poseValue })
-      }
-    }
-    if (updated.backgroundsValue) {
-      const existingOption = updated.backgroundsValues.find(
-        (item) => item.title === updated.backgroundsValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.backgroundsValue.value
-      } else {
-        updated.backgroundsValues.push({ ...updated.backgroundsValue })
-      }
-    }
-
-    promptsData = updated
+    autoSaveCurrentValues()
 
     // Save prompts before generating
-    savePrompts(promptsData)
+    await savePromptsData()
 
+    let currentPromptsData: PromptsData
+    promptsData.subscribe(data => currentPromptsData = data)()
+    
     await generateImage({
-      promptsData,
+      promptsData: currentPromptsData!,
       settings,
       onLoadingChange: (loading) => {
         isLoading = loading
@@ -204,10 +143,6 @@
     isGeneratingForever = false
   }
 
-  function handlePromptsChange(newPromptsData: PromptsData) {
-    promptsData = newPromptsData
-  }
-
   function handleImageChange(filePath: string) {
     if (imageUrl && imageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(imageUrl)
@@ -216,9 +151,6 @@
     currentImageFileName = filePath
   }
 
-  function handleMetadataLoad(metadata: Partial<PromptsData>) {
-    promptsData = { ...promptsData, ...metadata }
-  }
 
   async function handleSettingsChange(newSettings: Settings) {
     settings = { ...newSettings }
@@ -243,7 +175,7 @@
 <main class="prompt-input">
   <div class="content-grid">
     <section class="form-section">
-      <PromptForm bind:promptsData {availableCheckpoints} onPromptsChange={handlePromptsChange} />
+      <PromptForm {availableCheckpoints} />
 
       <GenerationControls
         {isLoading}
@@ -263,9 +195,7 @@
         {imageUrl}
         {currentImageFileName}
         outputDirectory={settings.outputDirectory}
-        {promptsData}
         onImageChange={handleImageChange}
-        onMetadataLoad={handleMetadataLoad}
       />
     </section>
   </div>

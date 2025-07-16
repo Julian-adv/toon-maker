@@ -1,24 +1,21 @@
 <!-- Component for displaying images with navigation and metadata loading -->
 <script lang="ts">
   import { getImageList, getImageMetadata } from './utils/fileIO'
-  import type { PromptsData, OptionItem } from '$lib/types'
+  import type { OptionItem, PromptsData } from '$lib/types'
+  import { promptsData } from './stores/promptsStore'
 
   interface Props {
     imageUrl: string | null
     currentImageFileName: string
     outputDirectory: string
-    promptsData: PromptsData
     onImageChange: (filePath: string) => void
-    onMetadataLoad: (metadata: PromptsData) => void
   }
 
   let {
     imageUrl,
     currentImageFileName,
     outputDirectory,
-    promptsData,
-    onImageChange,
-    onMetadataLoad
+    onImageChange
   }: Props = $props()
 
   let allFiles: string[] = $state([])
@@ -115,15 +112,18 @@
           return { title: matchedValue, value: matchedValue }
         }
 
-        // Create updated prompts data
-        const updatedPrompts: Partial<PromptsData> = {}
-        if (qualityMatch) updatedPrompts.qualityValue = findOrCreateOption(qualityMatch, promptsData.qualityValues)
-        if (characterMatch) updatedPrompts.characterValue = findOrCreateOption(characterMatch, promptsData.characterValues)
-        if (outfitMatch) updatedPrompts.outfitValue = findOrCreateOption(outfitMatch, promptsData.outfitValues)
-        if (poseMatch) updatedPrompts.poseValue = findOrCreateOption(poseMatch, promptsData.poseValues)
-        if (backgroundsMatch) updatedPrompts.backgroundsValue = findOrCreateOption(backgroundsMatch, promptsData.backgroundsValues)
-        
-        onMetadataLoad(updatedPrompts as PromptsData)
+        // Update prompts data based on image metadata
+        promptsData.update(data => {
+          const updatedPrompts: Partial<PromptsData> = {}
+          
+          if (qualityMatch) updatedPrompts.qualityValue = findOrCreateOption(qualityMatch, data.qualityValues)
+          if (characterMatch) updatedPrompts.characterValue = findOrCreateOption(characterMatch, data.characterValues)
+          if (outfitMatch) updatedPrompts.outfitValue = findOrCreateOption(outfitMatch, data.outfitValues)
+          if (poseMatch) updatedPrompts.poseValue = findOrCreateOption(poseMatch, data.poseValues)
+          if (backgroundsMatch) updatedPrompts.backgroundsValue = findOrCreateOption(backgroundsMatch, data.backgroundsValues)
+          
+          return { ...data, ...updatedPrompts }
+        })
       }
     } catch (error) {
       console.error('Failed to load image metadata:', error)

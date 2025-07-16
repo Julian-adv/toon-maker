@@ -1,97 +1,30 @@
 <!-- Component for prompt input forms and checkpoint selection -->
 <script lang="ts">
   import TextAreaInput from './TextAreaInput.svelte'
-  import type { OptionItem } from './types'
-  import type { PromptsData } from '$lib/types'
+  import { 
+    promptsData,
+    updateQualityValue,
+    updateCharacterValue,
+    updateOutfitValue,
+    updatePoseValue,
+    updateBackgroundsValue,
+    updateQualityValues,
+    updateCharacterValues,
+    updateOutfitValues,
+    updatePoseValues,
+    updateBackgroundsValues,
+    updateCheckpoint,
+    updateUpscale,
+    updateFaceDetailer
+  } from './stores/promptsStore'
 
   interface Props {
-    promptsData: PromptsData
     availableCheckpoints: string[]
-    onPromptsChange: (data: PromptsData) => void
   }
 
-  let { promptsData = $bindable(), availableCheckpoints, onPromptsChange }: Props = $props()
+  let { availableCheckpoints }: Props = $props()
 
-  // Update functions for form inputs
-
-  function updateQualityValue(value: OptionItem) {
-    const updated = { ...promptsData }
-    updated.qualityValue = value
-    onPromptsChange(updated)
-  }
-
-  function updateCharacterValue(value: OptionItem) {
-    const updated = { ...promptsData }
-    updated.characterValue = value
-    onPromptsChange(updated)
-  }
-
-  function updateOutfitValue(value: OptionItem) {
-    const updated = { ...promptsData }
-    updated.outfitValue = value
-    onPromptsChange(updated)
-  }
-
-  function updatePoseValue(value: OptionItem) {
-    const updated = { ...promptsData }
-    updated.poseValue = value
-    onPromptsChange(updated)
-  }
-
-  function updateBackgroundsValue(value: OptionItem) {
-    const updated = { ...promptsData }
-    updated.backgroundsValue = value
-    onPromptsChange(updated)
-  }
-
-  function updateCheckpoint(checkpoint: string) {
-    const updated = { ...promptsData }
-    updated.selectedCheckpoint = checkpoint
-    onPromptsChange(updated)
-  }
-
-  function updateUpscale(enabled: boolean) {
-    const updated = { ...promptsData }
-    updated.useUpscale = enabled
-    onPromptsChange(updated)
-  }
-
-  function updateFaceDetailer(enabled: boolean) {
-    const updated = { ...promptsData }
-    updated.useFaceDetailer = enabled
-    onPromptsChange(updated)
-  }
-
-  // Options update functions
-  function updateQualityOptions(options: OptionItem[]) {
-    const updated = { ...promptsData }
-    updated.qualityValues = options
-    onPromptsChange(updated)
-  }
-
-  function updateCharacterOptions(options: OptionItem[]) {
-    const updated = { ...promptsData }
-    updated.characterValues = options
-    onPromptsChange(updated)
-  }
-
-  function updateOutfitOptions(options: OptionItem[]) {
-    const updated = { ...promptsData }
-    updated.outfitValues = options
-    onPromptsChange(updated)
-  }
-
-  function updatePoseOptions(options: OptionItem[]) {
-    const updated = { ...promptsData }
-    updated.poseValues = options
-    onPromptsChange(updated)
-  }
-
-  function updateBackgroundsOptions(options: OptionItem[]) {
-    const updated = { ...promptsData }
-    updated.backgroundsValues = options
-    onPromptsChange(updated)
-  }
+  // Update functions use the imported store functions directly
 </script>
 
 <div class="prompt-form">
@@ -100,55 +33,55 @@
       id="quality"
       label="Quality"
       placeholder="Quality settings..."
-      bind:value={promptsData.qualityValue}
-      options={promptsData.qualityValues}
+      bind:value={$promptsData.qualityValue}
+      options={$promptsData.qualityValues}
       rows={3}
       onValueChange={updateQualityValue}
-      onOptionsChange={updateQualityOptions}
+      onOptionsChange={updateQualityValues}
     />
 
     <TextAreaInput
       id="character"
       label="Character"
       placeholder="Character description..."
-      bind:value={promptsData.characterValue}
-      options={promptsData.characterValues}
+      bind:value={$promptsData.characterValue}
+      options={$promptsData.characterValues}
       rows={3}
       onValueChange={updateCharacterValue}
-      onOptionsChange={updateCharacterOptions}
+      onOptionsChange={updateCharacterValues}
     />
 
     <TextAreaInput
       id="outfit"
       label="Outfit"
       placeholder="Outfit description..."
-      bind:value={promptsData.outfitValue}
-      options={promptsData.outfitValues}
+      bind:value={$promptsData.outfitValue}
+      options={$promptsData.outfitValues}
       rows={3}
       onValueChange={updateOutfitValue}
-      onOptionsChange={updateOutfitOptions}
+      onOptionsChange={updateOutfitValues}
     />
 
     <TextAreaInput
       id="pose"
       label="Pose"
       placeholder="Pose description..."
-      bind:value={promptsData.poseValue}
-      options={promptsData.poseValues}
+      bind:value={$promptsData.poseValue}
+      options={$promptsData.poseValues}
       rows={3}
       onValueChange={updatePoseValue}
-      onOptionsChange={updatePoseOptions}
+      onOptionsChange={updatePoseValues}
     />
 
     <TextAreaInput
       id="backgrounds"
       label="Backgrounds"
       placeholder="Background description..."
-      bind:value={promptsData.backgroundsValue}
-      options={promptsData.backgroundsValues}
+      bind:value={$promptsData.backgroundsValue}
+      options={$promptsData.backgroundsValues}
       rows={3}
       onValueChange={updateBackgroundsValue}
-      onOptionsChange={updateBackgroundsOptions}
+      onOptionsChange={updateBackgroundsValues}
     />
   </div>
 
@@ -157,7 +90,7 @@
       <label for="checkpoint">Checkpoint</label>
       <select
         id="checkpoint"
-        value={promptsData.selectedCheckpoint || ''}
+        value={$promptsData.selectedCheckpoint || ''}
         onchange={(e) => updateCheckpoint((e.target as HTMLSelectElement).value)}
       >
         <option value="">Select checkpoint...</option>
@@ -171,7 +104,7 @@
       <label class="checkbox-label">
         <input
           type="checkbox"
-          checked={promptsData.useUpscale}
+          checked={$promptsData.useUpscale}
           onchange={(e) => updateUpscale((e.target as HTMLInputElement).checked)}
         />
         Use Upscale
@@ -183,7 +116,7 @@
         <input
           type="checkbox"
           class="accent-sky-600"
-          checked={promptsData.useFaceDetailer}
+          checked={$promptsData.useFaceDetailer}
           onchange={(e) => updateFaceDetailer((e.target as HTMLInputElement).checked)}
         />
         Use Face Detailer

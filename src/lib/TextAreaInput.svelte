@@ -4,16 +4,7 @@
   import ComboBox from './ComboBox.svelte'
   import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
 
-  let {
-    id,
-    label,
-    value = $bindable(),
-    placeholder,
-    rows,
-    options = [],
-    onValueChange,
-    onOptionsChange
-  }: {
+  interface Props {
     id: string
     label: string
     value: OptionItem
@@ -22,7 +13,18 @@
     options: OptionItem[]
     onValueChange: (value: OptionItem) => void
     onOptionsChange: (options: OptionItem[]) => void
-  } = $props()
+  }
+
+  let {
+    id,
+    label,
+    value = $bindable(),
+    placeholder,
+    rows,
+    options,
+    onValueChange,
+    onOptionsChange
+  }: Props = $props()
 
   let showEditDialog = $state(false)
 
