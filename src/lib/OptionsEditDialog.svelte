@@ -61,6 +61,12 @@
     newOptionValue = newValue.value
   }
 
+  function handleOptionSelected(selectedValue: OptionItem) {
+    // Reset original values only when user selects from dropdown list
+    originalTitle = selectedValue.title
+    originalValue = selectedValue.value
+  }
+
   function handleDeleteCurrentValue() {
     const updatedOptions = options.filter((option) => option.title !== value.title)
     onOptionsChange(updatedOptions)
@@ -132,6 +138,7 @@
               {options}
               placeholder="Enter option title"
               onValueChange={handleTitleComboChange}
+              onOptionSelected={handleOptionSelected}
             />
           </div>
           <div>

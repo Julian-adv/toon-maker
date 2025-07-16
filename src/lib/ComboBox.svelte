@@ -7,9 +7,10 @@
     options: OptionItem[]
     placeholder?: string
     onValueChange: (value: OptionItem) => void
+    onOptionSelected?: (value: OptionItem) => void
   }
 
-  let { value = $bindable(), options, placeholder = "Enter value...", onValueChange }: Props = $props()
+  let { value = $bindable(), options, placeholder = "Enter value...", onValueChange, onOptionSelected }: Props = $props()
 
   let inputElement: HTMLInputElement
   let showDropdown = $state(false)
@@ -32,6 +33,7 @@
     value = { ...option }
     showDropdown = false
     onValueChange(value)
+    onOptionSelected?.(value)
   }
 
   function handleInput() {
