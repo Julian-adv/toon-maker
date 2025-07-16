@@ -113,40 +113,30 @@ export async function POST({ request }) {
     let promptText = ''
     let outputDirectory = DEFAULT_OUTPUT_DIRECTORY
     let workflowData: WorkflowData | null = null
-    let categorizedPrompts = {
-      quality: '',
-      character: '',
-      outfit: '',
-      pose: '',
-      backgrounds: ''
-    }
+    let categorizedPrompts: Record<string, string> = {}
 
     if (contentType?.includes('multipart/form-data')) {
       // Handle form data with prompt metadata and output directory
       const formData = await request.formData()
       const imageFile = formData.get('image') as File
-      const quality = formData.get('quality') as string
-      const character = formData.get('character') as string
-      const outfit = formData.get('outfit') as string
-      const pose = formData.get('pose') as string
-      const backgrounds = formData.get('backgrounds') as string
+      // Extract all category data dynamically
+      const categoryData: Record<string, string> = {}
+      for (const [key, value] of formData.entries()) {
+        if (key !== 'image' && key !== 'outputDirectory' && key !== 'workflow') {
+          categoryData[key] = value as string
+        }
+      }
       const outputDir = formData.get('outputDirectory') as string
       const workflow = formData.get('workflow') as string
 
       if (imageFile) {
         imageBuffer = Buffer.from(await imageFile.arrayBuffer())
         // Reconstruct full prompt for metadata
-        const promptParts = [quality, character, outfit, pose, backgrounds].filter(Boolean)
+        const promptParts = Object.values(categoryData).filter(Boolean)
         promptText = promptParts.join(', ')
         
         // Store categorized prompts for structured metadata
-        categorizedPrompts = {
-          quality: quality || '',
-          character: character || '',
-          outfit: outfit || '',
-          pose: pose || '',
-          backgrounds: backgrounds || ''
-        }
+        categorizedPrompts = categoryData
         outputDirectory = outputDir || DEFAULT_OUTPUT_DIRECTORY
 
         // Parse workflow data
@@ -208,12 +198,12 @@ export async function POST({ request }) {
       const modelName = model.replace(/\.(safetensors|ckpt)$/, '')
 
       // Format prompt in WebUI style with parameters
+      const categoryLines = Object.entries(categorizedPrompts)
+        .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+        .join('\n')
+      
       const parametersText = `${promptText}
-Quality: ${categorizedPrompts.quality}
-Character: ${categorizedPrompts.character}
-Outfit: ${categorizedPrompts.outfit}
-Pose: ${categorizedPrompts.pose}
-Backgrounds: ${categorizedPrompts.backgrounds}
+${categoryLines}
 Steps: ${steps}, Sampler: ${samplerName}, Schedule type: ${scheduleType}, CFG scale: ${cfg}, Seed: ${seed}, Size: ${width}x${height}, Model: ${modelName}`
 
       // First process the image with Sharp

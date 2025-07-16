@@ -1,7 +1,7 @@
 <!-- Component for displaying images with navigation and metadata loading -->
 <script lang="ts">
   import { getImageList, getImageMetadata } from './utils/fileIO'
-  import type { OptionItem, PromptsData } from '$lib/types'
+  import type { OptionItem } from '$lib/types'
   import { promptsData } from './stores/promptsStore'
 
   interface Props {
@@ -11,12 +11,7 @@
     onImageChange: (filePath: string) => void
   }
 
-  let {
-    imageUrl,
-    currentImageFileName,
-    outputDirectory,
-    onImageChange
-  }: Props = $props()
+  let { imageUrl, currentImageFileName, outputDirectory, onImageChange }: Props = $props()
 
   let allFiles: string[] = $state([])
   let currentIndex = $state(-1)
@@ -43,7 +38,6 @@
       currentIndex = -1
     }
   }
-
 
   // Navigation functions
   async function goToPreviousImage() {
@@ -90,21 +84,21 @@
 
   async function loadImageMetadata(filePath: string) {
     try {
-      const metadata = await getImageMetadata(filePath) as { parameters?: string }
-      
+      const metadata = (await getImageMetadata(filePath)) as { parameters?: string }
+
       if (metadata && metadata.parameters) {
         // Parse metadata to extract categorized prompts
         const params = metadata.parameters as string
-        
-        const qualityMatch = params.match(/Quality: ([^\n]*)/)?.[1]?.trim()
-        const characterMatch = params.match(/Character: ([^\n]*)/)?.[1]?.trim()
-        const outfitMatch = params.match(/Outfit: ([^\n]*)/)?.[1]?.trim()
-        const poseMatch = params.match(/Pose: ([^\n]*)/)?.[1]?.trim()
-        const backgroundsMatch = params.match(/Backgrounds: ([^\n]*)/)?.[1]?.trim()
-        
+
+        // Helper function to extract category value from metadata
+        function extractCategoryValue(params: string, categoryName: string): string | undefined {
+          const pattern = new RegExp(`${categoryName}: ([^\n]*)`, 'i')
+          return params.match(pattern)?.[1]?.trim()
+        }
+
         // Helper function to find matching option and create proper OptionItem
         function findOrCreateOption(matchedValue: string, optionsArray: OptionItem[]): OptionItem {
-          const existingOption = optionsArray.find(item => item.value === matchedValue)
+          const existingOption = optionsArray.find((item) => item.value === matchedValue)
           if (existingOption) {
             return { title: existingOption.title, value: existingOption.value }
           }
@@ -113,16 +107,22 @@
         }
 
         // Update prompts data based on image metadata
-        promptsData.update(data => {
-          const updatedPrompts: Partial<PromptsData> = {}
-          
-          if (qualityMatch) updatedPrompts.qualityValue = findOrCreateOption(qualityMatch, data.qualityValues)
-          if (characterMatch) updatedPrompts.characterValue = findOrCreateOption(characterMatch, data.characterValues)
-          if (outfitMatch) updatedPrompts.outfitValue = findOrCreateOption(outfitMatch, data.outfitValues)
-          if (poseMatch) updatedPrompts.poseValue = findOrCreateOption(poseMatch, data.poseValues)
-          if (backgroundsMatch) updatedPrompts.backgroundsValue = findOrCreateOption(backgroundsMatch, data.backgroundsValues)
-          
-          return { ...data, ...updatedPrompts }
+        promptsData.update((data) => {
+          const updatedCategories = data.categories.map((category) => {
+            // Use category name (capitalized) to extract value from metadata
+            const categoryName = category.name.charAt(0).toUpperCase() + category.name.slice(1)
+            const matchedValue = extractCategoryValue(params, categoryName)
+
+            if (matchedValue) {
+              return {
+                ...category,
+                currentValue: findOrCreateOption(matchedValue, category.values)
+              }
+            }
+            return category
+          })
+
+          return { ...data, categories: updatedCategories }
         })
       }
     } catch (error) {
@@ -139,21 +139,21 @@
       <p>No image to display</p>
     </div>
   {/if}
-  
+
   <div class="nav-controls">
     <button class="nav-button prev" onclick={goToPreviousImage} aria-label="Previous image">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
-    
+
     <span class="image-counter">
       {currentIndex >= 0 ? currentIndex + 1 : 0} / {allFiles.length}
     </span>
-    
+
     <button class="nav-button next" onclick={goToNextImage} aria-label="Next image">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </button>
   </div>
@@ -168,7 +168,6 @@
     align-items: center;
     gap: 1rem;
   }
-
 
   .nav-controls {
     display: flex;

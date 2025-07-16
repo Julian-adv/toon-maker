@@ -3,7 +3,7 @@
 import { json } from '@sveltejs/kit';
 import fs from 'fs/promises';
 import path from 'path';
-import type { PromptsData } from '$lib/types';
+import type { PromptsData, PromptCategory } from '$lib/types';
 
 const dataDir = path.resolve(process.cwd(), 'data')
 const filePath = path.join(dataDir, 'prompts.json')
@@ -30,30 +30,58 @@ export async function POST({ request }) {
   }
 }
 
+function createDefaultCategories(): PromptCategory[] {
+  return [
+    {
+      id: 'quality',
+      name: 'Quality',
+      values: [],
+      currentValue: { title: '', value: '' }
+    },
+    {
+      id: 'character',
+      name: 'Character',
+      values: [],
+      currentValue: { title: '', value: '' }
+    },
+    {
+      id: 'outfit',
+      name: 'Outfit',
+      values: [],
+      currentValue: { title: '', value: '' }
+    },
+    {
+      id: 'pose',
+      name: 'Pose',
+      values: [],
+      currentValue: { title: '', value: '' }
+    },
+    {
+      id: 'backgrounds',
+      name: 'Backgrounds',
+      values: [],
+      currentValue: { title: '', value: '' }
+    }
+  ]
+}
+
+
 export async function GET() {
   await ensureDir()
   try {
     const data = await fs.readFile(filePath, 'utf-8')
-    return json(JSON.parse(data))
+    const parsedData = JSON.parse(data)
+    return json(parsedData)
   } catch (error) {
     // If the file doesn't exist, return a default structure
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       const defaultPrompts: PromptsData = {
-        qualityValues: [],
-        characterValues: [],
-        outfitValues: [],
-        poseValues: [],
-        backgroundsValues: [],
+        categories: createDefaultCategories(),
         selectedCheckpoint: null,
         useUpscale: true,
-        useFaceDetailer: true,
-        qualityValue: { title: '', value: '' },
-        characterValue: { title: '', value: '' },
-        outfitValue: { title: '', value: '' },
-        poseValue: { title: '', value: '' },
-        backgroundsValue: { title: '', value: '' }
-      };
-      return json(defaultPrompts);
+        useFaceDetailer: true
+      }
+      return json(defaultPrompts)
     }
     console.error('Error reading file:', error)
     return json({ error: 'Failed to read data' }, { status: 500 })

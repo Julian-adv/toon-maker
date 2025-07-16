@@ -9,7 +9,6 @@
     label: string
     value: OptionItem
     placeholder: string
-    rows: number
     options: OptionItem[]
     onValueChange: (value: OptionItem) => void
     onOptionsChange: (options: OptionItem[]) => void
@@ -20,16 +19,24 @@
     label,
     value = $bindable(),
     placeholder,
-    rows,
     options,
     onValueChange,
     onOptionsChange
   }: Props = $props()
 
   let showEditDialog = $state(false)
+  let textareaValue = $state(value.value)
+
+  // Sync textareaValue with value.value when value changes
+  $effect(() => {
+    if (value.value !== textareaValue) {
+      textareaValue = value.value
+    }
+  })
 
   function handleTextareaValueChange(newValue: string) {
-    value.value = newValue
+    textareaValue = newValue
+    value = { ...value, value: newValue }
     onValueChange(value)
   }
 
@@ -76,9 +83,9 @@
   </div>
   <AutoCompleteTextarea
     {id}
-    bind:value={value.value}
+    value={textareaValue}
     {placeholder}
-    {rows}
+    rows={3}
     onValueChange={handleTextareaValueChange}
   />
 

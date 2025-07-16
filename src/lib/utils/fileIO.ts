@@ -46,11 +46,12 @@ export async function saveImage(
     // Send as form data with prompt metadata and output directory
     const formData = new FormData()
     formData.append('image', imageBlob, 'generated-image.png')
-    formData.append('quality', promptsData.qualityValue.value)
-    formData.append('character', promptsData.characterValue.value)
-    formData.append('outfit', promptsData.outfitValue.value)
-    formData.append('pose', promptsData.poseValue.value)
-    formData.append('backgrounds', promptsData.backgroundsValue.value)
+    
+    // Add category data dynamically
+    promptsData.categories.forEach(category => {
+      formData.append(category.id, category.currentValue.value)
+    })
+    
     formData.append('outputDirectory', outputDirectory)
 
     // Add workflow data for metadata generation

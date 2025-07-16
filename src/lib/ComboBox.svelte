@@ -12,17 +12,25 @@
 
   let { value = $bindable(), options, placeholder = "Enter value...", onValueChange, onOptionSelected }: Props = $props()
 
-  let inputElement: HTMLInputElement
   let showDropdown = $state(false)
   let filteredOptions = $state<OptionItem[]>([])
   let selectedIndex = $state(-1)
+  let inputValue = $state(value.title)
+  
+  // Keep input value in sync with prop changes, but only when it's a significant change
+  $effect(() => {
+    // Only update if the prop value changed and we're not currently focused on input
+    if (value.title !== inputValue && document.activeElement?.tagName !== 'INPUT') {
+      inputValue = value.title
+    }
+  })
 
   function updateDropdown() {
-    if (value.title.length === 0) {
+    if (inputValue.length === 0) {
       filteredOptions = options
     } else {
       filteredOptions = options.filter(option => 
-        option.title.toLowerCase().includes(value.title.toLowerCase())
+        option.title.toLowerCase().includes(inputValue.toLowerCase())
       )
     }
     showDropdown = filteredOptions.length > 0
@@ -31,16 +39,19 @@
 
   function selectOption(option: OptionItem) {
     value = { ...option }
+    inputValue = option.title
     showDropdown = false
     onValueChange(value)
     onOptionSelected?.(value)
   }
 
-  function handleInput() {
+  function handleInput(event: Event) {
+    const target = event.target as HTMLInputElement
+    inputValue = target.value
     updateDropdown()
     // Update the value object with the new input
-    const updatedValue = { ...value, title: value.title }
-    onValueChange(updatedValue)
+    value = { ...value, title: inputValue }
+    onValueChange(value)
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -96,8 +107,7 @@
   <input
     type="text"
     class="combobox-input"
-    bind:this={inputElement}
-    bind:value={value.title}
+    value={inputValue}
     {placeholder}
     oninput={handleInput}
     onkeydown={handleKeydown}

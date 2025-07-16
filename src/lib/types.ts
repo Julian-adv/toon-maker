@@ -15,20 +15,18 @@ export interface Settings {
   outputDirectory: string
 }
 
+export interface PromptCategory {
+  id: string
+  name: string
+  values: OptionItem[]
+  currentValue: OptionItem
+}
+
 export interface PromptsData {
-  qualityValues: OptionItem[]
-  characterValues: OptionItem[]
-  outfitValues: OptionItem[]
-  poseValues: OptionItem[]
-  backgroundsValues: OptionItem[]
+  categories: PromptCategory[]
   selectedCheckpoint: string | null
   useUpscale: boolean
   useFaceDetailer: boolean
-  qualityValue: OptionItem
-  characterValue: OptionItem
-  outfitValue: OptionItem
-  poseValue: OptionItem
-  backgroundsValue: OptionItem
 }
 
 export interface ProgressData {

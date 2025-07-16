@@ -1,33 +1,27 @@
 // Central store for prompts data using Svelte stores
 import { writable } from 'svelte/store'
-import type { PromptsData } from '$lib/types'
+import type { PromptsData, PromptCategory } from '$lib/types'
 import { savePrompts, loadPrompts } from '../utils/fileIO'
 
-// Initialize with default values
+// Minimal default data for initial store state
 const defaultPromptsData: PromptsData = {
-  qualityValues: [],
-  characterValues: [],
-  outfitValues: [],
-  poseValues: [],
-  backgroundsValues: [],
+  categories: [],
   selectedCheckpoint: null,
   useUpscale: false,
-  useFaceDetailer: false,
-  qualityValue: { title: '', value: '' },
-  characterValue: { title: '', value: '' },
-  outfitValue: { title: '', value: '' },
-  poseValue: { title: '', value: '' },
-  backgroundsValue: { title: '', value: '' }
+  useFaceDetailer: false
 }
 
 // Create reactive store
 export const promptsData = writable<PromptsData>(defaultPromptsData)
 
-// Load prompts from file on initialization
+// Load prompts from API on initialization
 export async function initializePromptsStore() {
   const savedPrompts = await loadPrompts()
   if (savedPrompts) {
     promptsData.set(savedPrompts)
+  } else {
+    // If API fails, at least we have an empty structure
+    console.warn('Failed to load prompts from API')
   }
 }
 
@@ -38,45 +32,53 @@ export async function savePromptsData() {
   await savePrompts(currentData!)
 }
 
-// Helper functions for updating specific parts of the store
-export function updateQualityValue(value: import('../types').OptionItem) {
-  promptsData.update(data => ({ ...data, qualityValue: value }))
+// Helper functions for updating categories
+export function updateCategoryValue(categoryId: string, value: import('../types').OptionItem) {
+  promptsData.update(data => ({
+    ...data,
+    categories: data.categories.map(category =>
+      category.id === categoryId
+        ? { ...category, currentValue: value }
+        : category
+    )
+  }))
 }
 
-export function updateCharacterValue(value: import('../types').OptionItem) {
-  promptsData.update(data => ({ ...data, characterValue: value }))
+export function updateCategoryValues(categoryId: string, values: import('../types').OptionItem[]) {
+  promptsData.update(data => ({
+    ...data,
+    categories: data.categories.map(category =>
+      category.id === categoryId
+        ? { ...category, values: values }
+        : category
+    )
+  }))
 }
 
-export function updateOutfitValue(value: import('../types').OptionItem) {
-  promptsData.update(data => ({ ...data, outfitValue: value }))
+// Functions for managing categories themselves
+export function addCategory(category: PromptCategory) {
+  promptsData.update(data => ({
+    ...data,
+    categories: [...data.categories, category]
+  }))
 }
 
-export function updatePoseValue(value: import('../types').OptionItem) {
-  promptsData.update(data => ({ ...data, poseValue: value }))
+export function removeCategory(categoryId: string) {
+  promptsData.update(data => ({
+    ...data,
+    categories: data.categories.filter(category => category.id !== categoryId)
+  }))
 }
 
-export function updateBackgroundsValue(value: import('../types').OptionItem) {
-  promptsData.update(data => ({ ...data, backgroundsValue: value }))
-}
-
-export function updateQualityValues(values: import('../types').OptionItem[]) {
-  promptsData.update(data => ({ ...data, qualityValues: values }))
-}
-
-export function updateCharacterValues(values: import('../types').OptionItem[]) {
-  promptsData.update(data => ({ ...data, characterValues: values }))
-}
-
-export function updateOutfitValues(values: import('../types').OptionItem[]) {
-  promptsData.update(data => ({ ...data, outfitValues: values }))
-}
-
-export function updatePoseValues(values: import('../types').OptionItem[]) {
-  promptsData.update(data => ({ ...data, poseValues: values }))
-}
-
-export function updateBackgroundsValues(values: import('../types').OptionItem[]) {
-  promptsData.update(data => ({ ...data, backgroundsValues: values }))
+export function updateCategory(categoryId: string, updates: Partial<PromptCategory>) {
+  promptsData.update(data => ({
+    ...data,
+    categories: data.categories.map(category =>
+      category.id === categoryId
+        ? { ...category, ...updates }
+        : category
+    )
+  }))
 }
 
 export function updateCheckpoint(checkpoint: string) {
@@ -96,60 +98,22 @@ export function autoSaveCurrentValues() {
   promptsData.update(data => {
     const updated = { ...data }
 
-    if (updated.qualityValue) {
-      const existingOption = updated.qualityValues.find(
-        (item) => item.title === updated.qualityValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.qualityValue.value
-      } else {
-        updated.qualityValues.push({ ...updated.qualityValue })
+    updated.categories = updated.categories.map(category => {
+      if (category.currentValue && category.currentValue.title) {
+        const existingOption = category.values.find(
+          (item) => item.title === category.currentValue.title
+        )
+        if (existingOption) {
+          existingOption.value = category.currentValue.value
+        } else {
+          return {
+            ...category,
+            values: [...category.values, { ...category.currentValue }]
+          }
+        }
       }
-    }
-
-    if (updated.characterValue) {
-      const existingOption = updated.characterValues.find(
-        (item) => item.title === updated.characterValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.characterValue.value
-      } else {
-        updated.characterValues.push({ ...updated.characterValue })
-      }
-    }
-
-    if (updated.outfitValue) {
-      const existingOption = updated.outfitValues.find(
-        (item) => item.title === updated.outfitValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.outfitValue.value
-      } else {
-        updated.outfitValues.push({ ...updated.outfitValue })
-      }
-    }
-
-    if (updated.poseValue) {
-      const existingOption = updated.poseValues.find(
-        (item) => item.title === updated.poseValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.poseValue.value
-      } else {
-        updated.poseValues.push({ ...updated.poseValue })
-      }
-    }
-
-    if (updated.backgroundsValue) {
-      const existingOption = updated.backgroundsValues.find(
-        (item) => item.title === updated.backgroundsValue.title
-      )
-      if (existingOption) {
-        existingOption.value = updated.backgroundsValue.value
-      } else {
-        updated.backgroundsValues.push({ ...updated.backgroundsValue })
-      }
-    }
+      return category
+    })
 
     return updated
   })
