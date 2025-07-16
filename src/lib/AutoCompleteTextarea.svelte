@@ -15,9 +15,8 @@
   let {
     id,
     value = $bindable(),
-    placeholder = "Enter text...",
-    rows = 6,
-    class: className = "",
+    placeholder = 'Enter text...',
+    class: className = '',
     onValueChange
   }: Props = $props()
 
@@ -188,8 +187,24 @@
     }
   }
 
+  function autoResize() {
+    if (textareaElement) {
+      textareaElement.style.height = 'auto'
+      textareaElement.style.height = textareaElement.scrollHeight + 'px'
+    }
+  }
+
+  // Auto-resize when value changes or component mounts
+  $effect(() => {
+    if (textareaElement && value !== undefined) {
+      // Small delay to ensure DOM has updated
+      setTimeout(() => autoResize(), 0)
+    }
+  })
+
   function handleInput() {
     updateSuggestions()
+    autoResize()
     onValueChange?.(value)
   }
 
@@ -212,12 +227,13 @@
     bind:this={textareaElement}
     bind:value
     {placeholder}
-    {rows}
+    rows={1}
     class="textarea {className}"
     oninput={handleInput}
     onclick={handleClick}
     onkeydown={handleKeydown}
     onblur={handleBlur}
+    style="resize: none; overflow: hidden; min-height: 1.5em;"
   ></textarea>
 
   {#if showSuggestions}

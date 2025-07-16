@@ -49,18 +49,18 @@
 </script>
 
 <div class="prompt-form">
-  <div class="form-section">
-    <div class="category-header">
-      <h3>Prompt Categories</h3>
-      <button
-        type="button"
-        class="btn-add-category bg-sky-500"
-        onclick={() => (showCategoryManager = true)}
-      >
-        + Add Category
-      </button>
-    </div>
+  <div class="category-header">
+    <h3>Prompt Categories</h3>
+    <button
+      type="button"
+      class="btn-add-category bg-sky-500"
+      onclick={() => (showCategoryManager = true)}
+    >
+      + Add Category
+    </button>
+  </div>
 
+  <div class="form-section">
     {#each $promptsData.categories as category (category.id)}
       <div class="category-item">
         <div class="category-controls">
@@ -144,6 +144,27 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    overflow-y: auto;
+    max-height: calc(100vh - 345px);
+    padding-right: 8px;
+  }
+
+  .form-section::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .form-section::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .form-section::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  .form-section::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
   }
 
   .field {
@@ -195,8 +216,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
     border-bottom: 1px solid #eee;
   }
 

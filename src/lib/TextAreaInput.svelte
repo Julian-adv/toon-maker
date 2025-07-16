@@ -52,12 +52,7 @@
 <div class="input-group">
   <label for={id}>{label}</label>
   <div class="select-container">
-    <ComboBox 
-      bind:value 
-      {options} 
-      placeholder="Enter title..."
-      {onValueChange}
-    />
+    <ComboBox bind:value {options} placeholder="Enter title..." {onValueChange} />
     <button
       type="button"
       class="edit-button"
@@ -85,7 +80,6 @@
     {id}
     value={textareaValue}
     {placeholder}
-    rows={3}
     onValueChange={handleTextareaValueChange}
   />
 
@@ -119,7 +113,6 @@
     gap: 5px;
     align-items: center;
   }
-
 
   .edit-button {
     display: flex;

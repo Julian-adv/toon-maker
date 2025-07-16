@@ -205,7 +205,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
   }
 
   .progress-bar {
