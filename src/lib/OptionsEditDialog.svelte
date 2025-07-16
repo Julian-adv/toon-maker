@@ -1,6 +1,7 @@
 <!-- Dialog component for editing options list -->
 <script lang="ts">
   import type { OptionItem } from './types'
+  import ComboBox from './ComboBox.svelte'
   interface Props {
     show: boolean
     label: string
@@ -23,18 +24,41 @@
 
   let newOptionTitle = $state(value.title)
   let newOptionValue = $state(value.value)
+  let titleComboValue = $state<OptionItem>({ title: value.title || '', value: value.title || '' })
+  
+  // Original values to compare against
+  let originalTitle = $state(value.title)
+  let originalValue = $state(value.value)
+
+  // Determine save button label based on changes
+  let saveButtonLabel = $derived.by(() => {
+    const titleChanged = newOptionTitle !== originalTitle
+    const valueChanged = newOptionValue !== originalValue
+    
+    if (titleChanged) {
+      return 'Add'
+    } else if (valueChanged) {
+      return 'Update'
+    } else {
+      return 'Save'
+    }
+  })
 
   // Update form values when dialog opens
   $effect(() => {
     if (show) {
+      originalTitle = value.title || ''
+      originalValue = value.value || ''
       newOptionTitle = value.title || ''
       newOptionValue = value.value || ''
+      titleComboValue = { title: value.title || '', value: value.title || '' }
     }
   })
 
-  function handleDelete(index: number) {
-    const updatedOptions = options.filter((_, i) => i !== index)
-    onOptionsChange(updatedOptions)
+  function handleTitleComboChange(newValue: OptionItem) {
+    titleComboValue = newValue
+    newOptionTitle = newValue.title
+    newOptionValue = newValue.value
   }
 
   function handleDeleteCurrentValue() {
@@ -101,45 +125,25 @@
       </div>
       <div class="dialog-body">
         <div class="form-section">
-          <div class="form-group">
+          <div>
             <label for="option-title">Title:</label>
-            <input
-              id="option-title"
-              type="text"
-              bind:value={newOptionTitle}
+            <ComboBox
+              bind:value={titleComboValue}
+              {options}
               placeholder="Enter option title"
-              class="form-input"
+              onValueChange={handleTitleComboChange}
             />
           </div>
-          <div class="form-group">
+          <div>
             <label for="option-value">Value:</label>
             <textarea
               id="option-value"
               bind:value={newOptionValue}
               placeholder="Enter option value"
               class="form-input"
-              rows="3"
+              rows="6"
             ></textarea>
           </div>
-        </div>
-
-        <div class="options-list">
-          {#each options as option, index (option.value)}
-            <div class="option-item">
-              <span class="option-text">{option.title}</span>
-              <button
-                type="button"
-                class="option-delete-btn"
-                onclick={() => handleDelete(index)}
-                aria-label="Delete option"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round" />
-                  <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round" />
-                </svg>
-              </button>
-            </div>
-          {/each}
         </div>
       </div>
       <div class="dialog-footer">
@@ -149,11 +153,11 @@
           onclick={handleDeleteCurrentValue}
           disabled={!value.value || options.length === 0}
         >
-          Delete Current Value
+          Delete
         </button>
         <div class="dialog-actions">
           <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
-          <button type="button" class="dialog-save-btn" onclick={handleSave}> Save </button>
+          <button type="button" class="dialog-save-btn" onclick={handleSave}> {saveButtonLabel} </button>
         </div>
       </div>
     </div>
@@ -225,49 +229,6 @@
     overflow-y: auto;
   }
 
-  .options-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .option-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
-    gap: 0.5rem;
-  }
-
-  .option-text {
-    flex: 1;
-    font-size: 0.875rem;
-    color: #333;
-    word-break: break-word;
-  }
-
-  .option-delete-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border: none;
-    background: none;
-    color: #dc3545;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-  }
-
-  .option-delete-btn:hover {
-    background: #f8d7da;
-    color: #721c24;
-  }
-
   .dialog-footer {
     display: flex;
     justify-content: space-between;
@@ -311,16 +272,12 @@
   }
 
   .form-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
 
-  .form-group {
-    margin-bottom: 1rem;
-  }
-
-  .form-group label {
+  .form-section label {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 500;
