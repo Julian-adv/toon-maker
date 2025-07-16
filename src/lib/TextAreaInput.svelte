@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import type { OptionItem } from './types'
   import OptionsEditDialog from './OptionsEditDialog.svelte'
+  import ComboBox from './ComboBox.svelte'
 
   let {
     id,
@@ -226,21 +227,12 @@
 <div class="input-group">
   <label for={id}>{label}</label>
   <div class="select-container">
-    <select
-      class="select-control"
-      bind:value={value.title}
-      onchange={() => {
-        const matchedOption = options.find((opt) => opt.title === value.title)
-        if (matchedOption) {
-          value = { ...matchedOption }
-          onValueChange(value)
-        }
-      }}
-    >
-      {#each options as option (option.title)}
-        <option value={option.title}>{option.title.substring(0, 180)}</option>
-      {/each}
-    </select>
+    <ComboBox 
+      bind:value 
+      {options} 
+      placeholder="Enter title..."
+      {onValueChange}
+    />
     <button
       type="button"
       class="edit-button"
@@ -329,16 +321,6 @@
     align-items: center;
   }
 
-  .select-control {
-    flex: 1;
-    min-width: 0;
-    padding: 5px 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-size: 14px;
-    background-color: #fff;
-    box-sizing: border-box;
-  }
 
   .edit-button {
     display: flex;
