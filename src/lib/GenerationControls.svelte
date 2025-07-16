@@ -44,12 +44,16 @@
 
 <div class="generation-controls">
   <div class="controls-row">
-    <button class="generate-btn" onclick={onGenerate} disabled={isLoading || isGeneratingForever}>
+    <button
+      class="generate-btn bg-sky-400"
+      onclick={onGenerate}
+      disabled={isLoading || isGeneratingForever}
+    >
       {isLoading ? 'Generating...' : 'Generate'}
     </button>
 
     <button
-      class="generate-forever-btn"
+      class="generate-forever-btn border border-sky-200 bg-sky-50 text-sky-400"
       onclick={isGeneratingForever ? onStopGeneration : onGenerateForever}
       disabled={isLoading && !isGeneratingForever}
     >
@@ -114,7 +118,6 @@
 
   .generate-btn {
     padding: 0.75rem 1.5rem;
-    background: #2196f3;
     color: white;
     border: none;
     border-radius: 6px;
@@ -147,9 +150,6 @@
     align-items: center;
     justify-content: center;
     padding: 0.75rem;
-    background: #4caf50;
-    color: white;
-    border: none;
     border-radius: 6px;
     font-size: 1rem;
     font-weight: 600;
