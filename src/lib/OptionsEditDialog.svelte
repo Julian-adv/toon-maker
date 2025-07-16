@@ -84,21 +84,64 @@
       }
       value = updatedOptions[newIndex]
       onValueChange(value)
+      
+      // Reset original values to the new current value
+      originalTitle = value.title
+      originalValue = value.value
+      
+      // Reset form values to match the new current value
+      newOptionTitle = value.title
+      newOptionValue = value.value
     } else {
       value.title = ''
       value.value = ''
       onValueChange(value)
+      
+      // Reset original values to empty
+      originalTitle = ''
+      originalValue = ''
+      
+      // Reset form values to empty
+      newOptionTitle = ''
+      newOptionValue = ''
     }
   }
 
   function handleSave() {
     if (newOptionValue.trim()) {
-      const newOption: OptionItem = {
-        title: newOptionTitle.trim() || newOptionValue.trim(),
-        value: newOptionValue.trim()
+      const titleChanged = newOptionTitle !== originalTitle
+      const valueChanged = newOptionValue !== originalValue
+      
+      if (titleChanged) {
+        // Add new option
+        const newOption: OptionItem = {
+          title: newOptionTitle.trim() || newOptionValue.trim(),
+          value: newOptionValue.trim()
+        }
+        const updatedOptions = [...options, newOption]
+        onOptionsChange(updatedOptions)
+        
+        // Update current value to the new option
+        value.title = newOption.title
+        value.value = newOption.value
+        onValueChange(value)
+      } else if (valueChanged) {
+        // Update existing option's value
+        const updatedOptions = options.map(option => 
+          option.title === originalTitle 
+            ? { ...option, value: newOptionValue.trim() }
+            : option
+        )
+        onOptionsChange(updatedOptions)
+        
+        // Update current value
+        value.value = newOptionValue.trim()
+        onValueChange(value)
+      } else {
+        // No changes, just make sure current value is set
+        onValueChange(value)
       }
-      const updatedOptions = [...options, newOption]
-      onOptionsChange(updatedOptions)
+      
       newOptionTitle = ''
       newOptionValue = ''
     }
