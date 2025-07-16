@@ -2,6 +2,7 @@
 <script lang="ts">
   import type { OptionItem } from './types'
   import ComboBox from './ComboBox.svelte'
+  import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
   interface Props {
     show: boolean
     label: string
@@ -25,7 +26,7 @@
   let newOptionTitle = $state(value.title)
   let newOptionValue = $state(value.value)
   let titleComboValue = $state<OptionItem>({ title: value.title || '', value: value.title || '' })
-  
+
   // Original values to compare against
   let originalTitle = $state(value.title)
   let originalValue = $state(value.value)
@@ -34,7 +35,7 @@
   let saveButtonLabel = $derived.by(() => {
     const titleChanged = newOptionTitle !== originalTitle
     const valueChanged = newOptionValue !== originalValue
-    
+
     if (titleChanged) {
       return 'Add'
     } else if (valueChanged) {
@@ -143,13 +144,12 @@
           </div>
           <div>
             <label for="option-value">Value:</label>
-            <textarea
+            <AutoCompleteTextarea
               id="option-value"
               bind:value={newOptionValue}
               placeholder="Enter option value"
-              class="form-input"
-              rows="6"
-            ></textarea>
+              rows={6}
+            />
           </div>
         </div>
       </div>
@@ -164,7 +164,9 @@
         </button>
         <div class="dialog-actions">
           <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
-          <button type="button" class="dialog-save-btn" onclick={handleSave}> {saveButtonLabel} </button>
+          <button type="button" class="dialog-save-btn" onclick={handleSave}>
+            {saveButtonLabel}
+          </button>
         </div>
       </div>
     </div>
@@ -290,21 +292,6 @@
     font-weight: 500;
     color: #555;
     text-align: left;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    box-sizing: border-box;
-  }
-
-  .form-input:focus {
-    outline: none;
-    border-color: #2196f3;
-    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
   }
 
   .dialog-actions {
