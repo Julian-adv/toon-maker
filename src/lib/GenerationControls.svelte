@@ -129,7 +129,7 @@
   }
 
   .generate-btn:hover:not(:disabled) {
-    background: #1976d2;
+    background: var(--color-sky-500);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }

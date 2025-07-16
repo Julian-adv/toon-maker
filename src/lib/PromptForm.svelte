@@ -182,6 +182,7 @@
       <label class="checkbox-label">
         <input
           type="checkbox"
+          class="accent-sky-600"
           checked={promptsData.useFaceDetailer}
           onchange={(e) => updateFaceDetailer((e.target as HTMLInputElement).checked)}
         />
