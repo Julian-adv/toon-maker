@@ -1,7 +1,7 @@
 <!-- Component for generation controls, progress bar, and loading state -->
 <script lang="ts">
   import SettingsDialog from './SettingsDialog.svelte'
-  import { Cog8Tooth } from 'svelte-heros-v2'
+  import { Cog8Tooth, Play, Stop } from 'svelte-heros-v2'
   import type { Settings, ProgressData } from '$lib/types'
 
   interface Props {
@@ -9,10 +9,22 @@
     progressData: ProgressData
     settings: Settings
     onGenerate: () => void
+    onGenerateForever: () => void
+    onStopGeneration: () => void
+    isGeneratingForever: boolean
     onSettingsChange: (settings: Settings) => void
   }
 
-  let { isLoading, progressData, settings, onGenerate, onSettingsChange }: Props = $props()
+  let {
+    isLoading,
+    progressData,
+    settings,
+    onGenerate,
+    onGenerateForever,
+    onStopGeneration,
+    isGeneratingForever,
+    onSettingsChange
+  }: Props = $props()
 
   let showSettingsDialog = $state(false)
 
@@ -32,8 +44,20 @@
 
 <div class="generation-controls">
   <div class="controls-row">
-    <button class="generate-btn" onclick={onGenerate} disabled={isLoading}>
-      {isLoading ? 'Generating...' : 'Generate Image'}
+    <button class="generate-btn" onclick={onGenerate} disabled={isLoading || isGeneratingForever}>
+      {isLoading ? 'Generating...' : 'Generate'}
+    </button>
+
+    <button
+      class="generate-forever-btn"
+      onclick={isGeneratingForever ? onStopGeneration : onGenerateForever}
+      disabled={isLoading && !isGeneratingForever}
+    >
+      {#if isGeneratingForever}
+        <Stop />
+      {:else}
+        <Play />
+      {/if}
     </button>
 
     <button
@@ -112,6 +136,40 @@
   }
 
   .generate-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .generate-forever-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 48px;
+    height: 48px;
+  }
+
+  .generate-forever-btn:hover:not(:disabled) {
+    background: #45a049;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .generate-forever-btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .generate-forever-btn:disabled {
     background: #cccccc;
     cursor: not-allowed;
     transform: none;

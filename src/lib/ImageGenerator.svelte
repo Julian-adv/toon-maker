@@ -22,6 +22,8 @@
   let progressData: ProgressData = $state({ value: 0, max: 100, currentNode: '' })
   let availableCheckpoints: string[] = $state([])
   let imageViewer: { updateFileList: () => Promise<void> } | undefined
+  let isGeneratingForever = $state(false)
+  let shouldStopGeneration = $state(false)
 
   // Settings state
   let settings: Settings = $state({
@@ -167,6 +169,41 @@
     })
   }
 
+  async function handleGenerateForever() {
+    isGeneratingForever = true
+    shouldStopGeneration = false
+
+    while (isGeneratingForever && !shouldStopGeneration) {
+      try {
+        await handleGenerate()
+        
+        // Wait for current generation to complete
+        while (isLoading && !shouldStopGeneration) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+        
+        // If user pressed stop during generation, break
+        if (shouldStopGeneration) {
+          break
+        }
+        
+        // Small delay between generations
+        await new Promise(resolve => setTimeout(resolve, 500))
+      } catch (error) {
+        console.error('Forever generation error:', error)
+        break
+      }
+    }
+
+    isGeneratingForever = false
+    shouldStopGeneration = false
+  }
+
+  function handleStopGeneration() {
+    shouldStopGeneration = true
+    isGeneratingForever = false
+  }
+
   function handlePromptsChange(newPromptsData: PromptsData) {
     promptsData = newPromptsData
   }
@@ -212,7 +249,10 @@
         {isLoading}
         {progressData}
         {settings}
+        {isGeneratingForever}
         onGenerate={handleGenerate}
+        onGenerateForever={handleGenerateForever}
+        onStopGeneration={handleStopGeneration}
         onSettingsChange={handleSettingsChange}
       />
     </section>
