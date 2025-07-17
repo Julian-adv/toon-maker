@@ -10,10 +10,10 @@
     updateUpscale,
     updateFaceDetailer,
     addCategory,
-    removeCategory
+    removeCategory,
+    reorderCategories
   } from './stores/promptsStore'
   import type { PromptCategory, OptionItem } from '$lib/types'
-  import { Trash } from 'svelte-heros-v2'
 
   interface Props {
     availableCheckpoints: string[]
@@ -36,6 +36,8 @@
 
   // Category management
   let showCategoryManager = $state(false)
+  let draggedIndex = $state<number | null>(null)
+  let dragOverIndex = $state<number | null>(null)
 
   function handleAddCategory(newCategory: PromptCategory) {
     addCategory(newCategory)
@@ -45,6 +47,41 @@
     if (confirm('Are you sure you want to remove this category?')) {
       removeCategory(categoryId)
     }
+  }
+
+  // Drag and drop handlers
+  function handleDragStart(event: DragEvent, index: number) {
+    draggedIndex = index
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/html', '')
+    }
+  }
+
+  function handleDragOver(event: DragEvent, index: number) {
+    event.preventDefault()
+    dragOverIndex = index
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move'
+    }
+  }
+
+  function handleDragLeave() {
+    dragOverIndex = null
+  }
+
+  function handleDrop(event: DragEvent, index: number) {
+    event.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      reorderCategories(draggedIndex, index)
+    }
+    draggedIndex = null
+    dragOverIndex = null
+  }
+
+  function handleDragEnd() {
+    draggedIndex = null
+    dragOverIndex = null
   }
 </script>
 
@@ -60,19 +97,21 @@
     </button>
   </div>
 
-  <div class="form-section">
-    {#each $promptsData.categories as category (category.id)}
-      <div class="category-item">
-        <div class="category-controls">
-          <button
-            type="button"
-            class="btn-remove-category rounded-sm border border-red-200 bg-red-100 p-1 text-red-500 hover:bg-red-200"
-            onclick={() => handleRemoveCategory(category.id)}
-            title="Remove category"
-          >
-            <Trash />
-          </button>
-        </div>
+  <div class="form-section" role="list" aria-label="Category list">
+    {#each $promptsData.categories as category, index (category.id)}
+      <div
+        class="category-item {draggedIndex === index ? 'dragging' : ''} {dragOverIndex === index
+          ? 'drag-over'
+          : ''}"
+        draggable="true"
+        role="listitem"
+        aria-label="Category: {category.name}"
+        ondragstart={(e) => handleDragStart(e, index)}
+        ondragover={(e) => handleDragOver(e, index)}
+        ondragleave={handleDragLeave}
+        ondrop={(e) => handleDrop(e, index)}
+        ondragend={handleDragEnd}
+      >
         <TextAreaInput
           id={category.id}
           label={category.name}
@@ -81,6 +120,7 @@
           options={category.values}
           onValueChange={handleCategoryValueChange(category.id)}
           onOptionsChange={handleCategoryOptionsChange(category.id)}
+          onDelete={() => handleRemoveCategory(category.id)}
         />
       </div>
     {/each}
@@ -241,25 +281,24 @@
 
   .category-item {
     position: relative;
-    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    border-radius: 8px;
   }
 
-  .category-controls {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 1;
+  .category-item:active {
+    cursor: grabbing;
   }
 
-  .btn-remove-category {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1;
-    transition: background 0.2s ease;
+  .category-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+
+  .category-item.drag-over {
+    border-color: #4caf50;
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
 </style>

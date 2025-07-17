@@ -93,6 +93,15 @@ export function updateFaceDetailer(enabled: boolean) {
   promptsData.update(data => ({ ...data, useFaceDetailer: enabled }))
 }
 
+export function reorderCategories(fromIndex: number, toIndex: number) {
+  promptsData.update(data => {
+    const categories = [...data.categories]
+    const [removed] = categories.splice(fromIndex, 1)
+    categories.splice(toIndex, 0, removed)
+    return { ...data, categories }
+  })
+}
+
 // Auto-save current values to options arrays when they don't exist
 export function autoSaveCurrentValues() {
   promptsData.update(data => {
