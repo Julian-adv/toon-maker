@@ -39,7 +39,7 @@ The application follows a modular component architecture:
 - **PromptForm.svelte**: Manages all prompt input forms and model settings (checkpoints, upscale, face detailer)
 - **ImageViewer.svelte**: Handles image display, navigation controls, and metadata loading with automatic prompt restoration
 - **GenerationControls.svelte**: Contains generation button, progress tracking, and settings dialog
-- **TextAreaInput.svelte**: Reusable input component with autocomplete suggestions, select dropdown, and textarea for each prompt category
+- **TextAreaInput.svelte**: Reusable input component with autocomplete suggestions, select dropdown, textarea, and integrated category controls (drag handle, delete button)
 - **SettingsDialog.svelte**: Modal for configuring generation parameters
 
 ### Utility Modules
@@ -76,14 +76,16 @@ The application connects to a local ComfyUI instance at `http://127.0.0.1:8188` 
 
 - **Responsive Layout**: 1:3 grid ratio with form section and image section
 - **Image Navigation**: Previous/next buttons with current position indicator (n / total)
-- **Autocomplete**: Tag suggestions with keyboard navigation and dropdown positioning
+- **Autocomplete**: Tag suggestions with keyboard navigation and fixed positioning to prevent clipping
 - **Progress Tracking**: Real-time progress bar with optimized animation timing
 - **Prompt History**: Automatic saving of new prompts to dropdown options on generation
 - **Metadata Restoration**: Clicking through saved images automatically loads their generation prompts
+- **Drag-and-Drop Reordering**: Categories can be reordered by dragging with visual feedback
+- **Scrollable Form Sections**: Form sections with custom thin scrollbars and auto-growing textareas
 
 ### Key Features
 
-- Multi-category prompt system (quality, character, outfit, pose, background)
+- Multi-category prompt system with dynamic category management
 - Real-time progress tracking during image generation
 - Dynamic checkpoint selection from ComfyUI
 - Optional upscaling and face detailing
@@ -92,6 +94,9 @@ The application connects to a local ComfyUI instance at `http://127.0.0.1:8188` 
 - Image navigation with position tracking
 - Transparent overlay navigation controls
 - Settings persistence and validation
+- Drag-and-drop category reordering with visual feedback
+- Integrated category controls (drag handle and delete button within input components)
+- Auto-growing textareas that resize based on content
 
 ## Component Communication
 
