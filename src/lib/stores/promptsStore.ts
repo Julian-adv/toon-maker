@@ -1,6 +1,6 @@
 // Central store for prompts data using Svelte stores
 import { writable } from 'svelte/store'
-import type { PromptsData, PromptCategory } from '$lib/types'
+import type { PromptsData, PromptCategory, OptionItem } from '$lib/types'
 import { savePrompts, loadPrompts } from '../utils/fileIO'
 
 // Minimal default data for initial store state
@@ -100,6 +100,32 @@ export function reorderCategories(fromIndex: number, toIndex: number) {
     categories.splice(toIndex, 0, removed)
     return { ...data, categories }
   })
+}
+
+// Get random option for a category
+export function getRandomOption(categoryId: string): OptionItem | null {
+  let randomOption: OptionItem | null = null
+  promptsData.subscribe(data => {
+    const category = data.categories.find(cat => cat.id === categoryId)
+    if (category && category.values.length > 0) {
+      // Filter out the random option itself to avoid infinite loop
+      const realOptions = category.values.filter(option => option.title !== '[Random]')
+      if (realOptions.length > 0) {
+        const randomIndex = Math.floor(Math.random() * realOptions.length)
+        randomOption = realOptions[randomIndex]
+      }
+    }
+  })()
+  return randomOption
+}
+
+// Get effective value for a category (resolve random if needed)
+export function getEffectiveCategoryValue(category: PromptCategory): string {
+  if (category.currentValue.title === '[Random]') {
+    const randomOption = getRandomOption(category.id)
+    return randomOption?.value || ''
+  }
+  return category.currentValue.value
 }
 
 // Auto-save current values to options arrays when they don't exist

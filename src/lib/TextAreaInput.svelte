@@ -28,10 +28,15 @@
 
   let showEditDialog = $state(false)
   let textareaValue = $state(value.value)
+  
+  // Add random option to the options array
+  let optionsWithRandom = $derived([{ title: '[Random]', value: '[Random]' }, ...options])
 
   // Sync textareaValue with value.value when value changes
   $effect(() => {
-    if (value.value !== textareaValue) {
+    if (value.title === '[Random]') {
+      textareaValue = '[Random - will be selected during generation]'
+    } else if (value.value !== textareaValue) {
       textareaValue = value.value
     }
   })
@@ -83,7 +88,7 @@
     </button>
   </div>
   <div class="select-container">
-    <ComboBox bind:value {options} placeholder="Enter title..." {onValueChange} />
+    <ComboBox bind:value options={optionsWithRandom} placeholder="Enter title..." {onValueChange} />
     <button
       type="button"
       class="edit-button"
@@ -112,6 +117,7 @@
     value={textareaValue}
     {placeholder}
     onValueChange={handleTextareaValueChange}
+    readonly={value.title === '[Random]'}
   />
 
   <OptionsEditDialog

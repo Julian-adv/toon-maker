@@ -9,6 +9,7 @@
     placeholder?: string
     rows?: number
     class?: string
+    readonly?: boolean
     onValueChange?: (value: string) => void
   }
 
@@ -17,6 +18,7 @@
     value = $bindable(),
     placeholder = 'Enter text...',
     class: className = '',
+    readonly = false,
     onValueChange
   }: Props = $props()
 
@@ -66,6 +68,12 @@
   }
 
   function updateSuggestions() {
+    if (readonly) {
+      suggestions = []
+      showSuggestions = false
+      return
+    }
+    
     const { word } = getCurrentWord()
 
     if (word.length < 2) {
@@ -227,8 +235,9 @@
     bind:this={textareaElement}
     bind:value
     {placeholder}
+    {readonly}
     rows={1}
-    class="textarea {className}"
+    class="textarea {className} {readonly ? 'readonly' : ''}"
     oninput={handleInput}
     onclick={handleClick}
     onkeydown={handleKeydown}
@@ -279,6 +288,12 @@
     outline: none;
     border-color: #2196f3;
     box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+  }
+
+  .textarea.readonly {
+    background-color: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
   }
 
   .suggestions-dropdown {

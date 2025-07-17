@@ -5,6 +5,7 @@
 import { saveImage } from './fileIO'
 import { connectWebSocket, type WebSocketCallbacks } from './comfyui'
 import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
+import { getEffectiveCategoryValue } from '../stores/promptsStore'
 import type { PromptsData, Settings, ProgressData } from '$lib/types'
 
 // Workflow node interfaces
@@ -38,9 +39,9 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     options
 
   try {
-    // Build the combined prompt from dynamic categories
+    // Build the combined prompt from dynamic categories (resolve random values)
     const promptValue = promptsData.categories
-      .map(category => category.currentValue.value)
+      .map(category => getEffectiveCategoryValue(category))
       .filter(Boolean)
       .join(', ')
 
