@@ -136,8 +136,8 @@
     }
 
     suggestionPosition = {
-      top: popUpPos.y - textareaElement.getBoundingClientRect().y + 20 - textareaElement.scrollTop,
-      left: popUpPos.x - textareaElement.getBoundingClientRect().x - textareaElement.scrollLeft
+      top: popUpPos.y + 20,
+      left: popUpPos.x
     }
   }
 
@@ -282,7 +282,7 @@
   }
 
   .suggestions-dropdown {
-    position: absolute;
+    position: fixed;
     background: white;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -290,8 +290,9 @@
     max-height: 200px;
     overflow-y: auto;
     overflow-x: hidden;
-    z-index: 1000;
-    min-width: 150px;
+    z-index: 9999;
+    min-width: 120px;
+    max-width: 250px;
   }
 
   .suggestion-item {
