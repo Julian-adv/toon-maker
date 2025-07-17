@@ -45,7 +45,7 @@
 <div class="generation-controls">
   <div class="controls-row">
     <button
-      class="generate-btn bg-sky-400"
+      class="generate-btn bg-sky-500"
       onclick={onGenerate}
       disabled={isLoading || isGeneratingForever}
     >
