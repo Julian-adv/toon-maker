@@ -59,6 +59,14 @@
     showEditDialog = true
   }
 
+  // Get the appropriate value to pass to OptionsEditDialog
+  let dialogValue = $derived.by(() => {
+    if (value.title === '[Random]' && resolvedRandomValue) {
+      return resolvedRandomValue
+    }
+    return value
+  })
+
   function closeEditDialog() {
     showEditDialog = false
   }
@@ -139,7 +147,7 @@
     show={showEditDialog}
     {label}
     {options}
-    bind:value
+    value={dialogValue}
     onClose={closeEditDialog}
     {onOptionsChange}
     {onValueChange}

@@ -17,7 +17,7 @@
     show,
     label,
     options,
-    value = $bindable(),
+    value,
     onClose,
     onOptionsChange,
     onValueChange
