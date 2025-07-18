@@ -13,6 +13,7 @@
     onValueChange: (value: OptionItem) => void
     onOptionsChange: (options: OptionItem[]) => void
     onDelete: () => void
+    resolvedRandomValue?: OptionItem
   }
 
   let {
@@ -23,19 +24,24 @@
     options,
     onValueChange,
     onOptionsChange,
-    onDelete
+    onDelete,
+    resolvedRandomValue
   }: Props = $props()
 
   let showEditDialog = $state(false)
   let textareaValue = $state(value.value)
-  
+
   // Add random option to the options array
   let optionsWithRandom = $derived([{ title: '[Random]', value: '[Random]' }, ...options])
 
   // Sync textareaValue with value.value when value changes
   $effect(() => {
     if (value.title === '[Random]') {
-      textareaValue = '[Random - will be selected during generation]'
+      if (resolvedRandomValue) {
+        textareaValue = `[${resolvedRandomValue.title}]\n${resolvedRandomValue.value}`
+      } else {
+        textareaValue = '[Random - will be selected during generation]'
+      }
     } else if (value.value !== textareaValue) {
       textareaValue = value.value
     }

@@ -11,7 +11,8 @@
     updateFaceDetailer,
     addCategory,
     removeCategory,
-    reorderCategories
+    reorderCategories,
+    resolvedRandomValues
   } from './stores/promptsStore'
   import type { PromptCategory, OptionItem } from '$lib/types'
 
@@ -121,6 +122,7 @@
           onValueChange={handleCategoryValueChange(category.id)}
           onOptionsChange={handleCategoryOptionsChange(category.id)}
           onDelete={() => handleRemoveCategory(category.id)}
+          resolvedRandomValue={$resolvedRandomValues[category.id]}
         />
       </div>
     {/each}

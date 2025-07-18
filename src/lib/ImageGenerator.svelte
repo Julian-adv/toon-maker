@@ -16,7 +16,8 @@
     promptsData, 
     initializePromptsStore, 
     savePromptsData, 
-    autoSaveCurrentValues 
+    autoSaveCurrentValues,
+    resolveRandomValues
   } from './stores/promptsStore'
 
   // Component state
@@ -71,6 +72,9 @@
     // Add current values to options if they're not already there
     autoSaveCurrentValues()
 
+    // Resolve random values for display and pass to generateImage
+    const resolvedValues = resolveRandomValues()
+
     // Save prompts before generating
     await savePromptsData()
 
@@ -80,6 +84,7 @@
     await generateImage({
       promptsData: currentPromptsData!,
       settings,
+      resolvedRandomValues: resolvedValues,
       onLoadingChange: (loading) => {
         isLoading = loading
       },

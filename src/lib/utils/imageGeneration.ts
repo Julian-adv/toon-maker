@@ -5,8 +5,8 @@
 import { saveImage } from './fileIO'
 import { connectWebSocket, type WebSocketCallbacks } from './comfyui'
 import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
-import { getEffectiveCategoryValue } from '../stores/promptsStore'
-import type { PromptsData, Settings, ProgressData } from '$lib/types'
+import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
+import type { PromptsData, Settings, ProgressData, OptionItem } from '$lib/types'
 
 // Workflow node interfaces
 interface WorkflowNodeInput {
@@ -28,6 +28,7 @@ interface ComfyUIWorkflow {
 export interface GenerationOptions {
   promptsData: PromptsData
   settings: Settings
+  resolvedRandomValues: Record<string, OptionItem>
   onLoadingChange: (loading: boolean) => void
   onProgressUpdate: (progress: ProgressData) => void
   onImageReceived: (imageBlob: Blob, filePath: string) => void
@@ -35,13 +36,13 @@ export interface GenerationOptions {
 }
 
 export async function generateImage(options: GenerationOptions): Promise<void> {
-  const { promptsData, settings, onLoadingChange, onProgressUpdate, onImageReceived, onError } =
+  const { promptsData, settings, resolvedRandomValues, onLoadingChange, onProgressUpdate, onImageReceived, onError } =
     options
 
   try {
-    // Build the combined prompt from dynamic categories (resolve random values)
+    // Build the combined prompt from dynamic categories (using resolved random values)
     const promptValue = promptsData.categories
-      .map(category => getEffectiveCategoryValue(category))
+      .map(category => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
       .filter(Boolean)
       .join(', ')
 
@@ -72,7 +73,7 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     addSaveImageWebsocketNode(workflow, promptsData)
 
     // Submit to ComfyUI
-    await submitToComfyUI(workflow, clientId, promptsData, settings, {
+    await submitToComfyUI(workflow, clientId, promptsData, settings, resolvedRandomValues, {
       onLoadingChange,
       onProgressUpdate,
       onImageReceived,
@@ -164,6 +165,7 @@ async function submitToComfyUI(
   clientId: string,
   promptsData: PromptsData,
   settings: Settings,
+  resolvedRandomValues: Record<string, OptionItem>,
   callbacks: {
     onLoadingChange: (loading: boolean) => void
     onProgressUpdate: (progress: ProgressData) => void
@@ -201,7 +203,7 @@ async function submitToComfyUI(
     onLoadingChange: callbacks.onLoadingChange,
     onProgressUpdate: callbacks.onProgressUpdate,
     onImageReceived: async (imageBlob: Blob) => {
-      const filePath = await saveImage(imageBlob, promptsData, settings.outputDirectory, workflow)
+      const filePath = await saveImage(imageBlob, promptsData, settings.outputDirectory, workflow, resolvedRandomValues)
       if (filePath) {
         callbacks.onImageReceived(imageBlob, filePath)
       } else {

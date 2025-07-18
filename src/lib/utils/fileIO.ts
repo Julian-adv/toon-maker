@@ -6,7 +6,8 @@
 // - Settings management
 // - Image list retrieval
 
-import type { Settings, PromptsData } from '$lib/types'
+import type { Settings, PromptsData, OptionItem } from '$lib/types'
+import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
 
 export async function savePrompts(data: PromptsData): Promise<void> {
   try {
@@ -40,16 +41,18 @@ export async function saveImage(
   imageBlob: Blob,
   promptsData: PromptsData,
   outputDirectory: string,
-  workflow: unknown
+  workflow: unknown,
+  resolvedRandomValues: Record<string, OptionItem>
 ): Promise<string | null> {
   try {
     // Send as form data with prompt metadata and output directory
     const formData = new FormData()
     formData.append('image', imageBlob, 'generated-image.png')
     
-    // Add category data dynamically
+    // Add category data dynamically (use resolved random values)
     promptsData.categories.forEach(category => {
-      formData.append(category.id, category.currentValue.value)
+      const effectiveValue = getEffectiveCategoryValueFromResolved(category, resolvedRandomValues)
+      formData.append(category.id, effectiveValue)
     })
     
     formData.append('outputDirectory', outputDirectory)

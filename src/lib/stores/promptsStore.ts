@@ -14,6 +14,9 @@ const defaultPromptsData: PromptsData = {
 // Create reactive store
 export const promptsData = writable<PromptsData>(defaultPromptsData)
 
+// Store for tracking resolved random values during generation
+export const resolvedRandomValues = writable<Record<string, OptionItem>>({})
+
 // Load prompts from API on initialization
 export async function initializePromptsStore() {
   const savedPrompts = await loadPrompts()
@@ -119,11 +122,10 @@ export function getRandomOption(categoryId: string): OptionItem | null {
   return randomOption
 }
 
-// Get effective value for a category (resolve random if needed)
-export function getEffectiveCategoryValue(category: PromptCategory): string {
+// Get effective value using already resolved random values
+export function getEffectiveCategoryValueFromResolved(category: PromptCategory, resolvedValues: Record<string, OptionItem>): string {
   if (category.currentValue.title === '[Random]') {
-    const randomOption = getRandomOption(category.id)
-    return randomOption?.value || ''
+    return resolvedValues[category.id]?.value || ''
   }
   return category.currentValue.value
 }
@@ -134,7 +136,7 @@ export function autoSaveCurrentValues() {
     const updated = { ...data }
 
     updated.categories = updated.categories.map(category => {
-      if (category.currentValue && category.currentValue.title) {
+      if (category.currentValue && category.currentValue.title && category.currentValue.title !== '[Random]') {
         const existingOption = category.values.find(
           (item) => item.title === category.currentValue.title
         )
@@ -152,4 +154,23 @@ export function autoSaveCurrentValues() {
 
     return updated
   })
+}
+
+// Resolve random values and store them for display
+export function resolveRandomValues() {
+  const resolved: Record<string, OptionItem> = {}
+  
+  promptsData.subscribe(data => {
+    data.categories.forEach(category => {
+      if (category.currentValue.title === '[Random]') {
+        const randomOption = getRandomOption(category.id)
+        if (randomOption) {
+          resolved[category.id] = randomOption
+        }
+      }
+    })
+  })()
+  
+  resolvedRandomValues.set(resolved)
+  return resolved
 }
