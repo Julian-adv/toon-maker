@@ -131,8 +131,10 @@ export async function POST({ request }) {
 
       if (imageFile) {
         imageBuffer = Buffer.from(await imageFile.arrayBuffer())
-        // Reconstruct full prompt for metadata
-        const promptParts = Object.values(categoryData).filter(Boolean)
+        // Reconstruct full prompt for metadata (exclude negative category)
+        const promptParts = Object.entries(categoryData)
+          .filter(([key, value]) => key !== 'negative' && Boolean(value))
+          .map(([, value]) => value)
         promptText = promptParts.join(', ')
         
         // Store categorized prompts for structured metadata
@@ -199,7 +201,12 @@ export async function POST({ request }) {
 
       // Format prompt in WebUI style with parameters
       const categoryLines = Object.entries(categorizedPrompts)
-        .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+        .map(([key, value]) => {
+          if (key === 'negative') {
+            return `Negative prompt: ${value}`
+          }
+          return `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`
+        })
         .join('\n')
       
       const parametersText = `${promptText}
