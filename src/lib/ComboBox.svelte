@@ -16,6 +16,9 @@
   let filteredOptions = $state<OptionItem[]>([])
   let selectedIndex = $state(-1)
   let inputValue = $state(value.title)
+  let containerElement: HTMLDivElement | undefined = $state()
+  let dropdownPosition = $state<'bottom' | 'top'>('bottom')
+  let dropdownCoords = $state({ top: 0, left: 0, width: 0 })
   
   // Keep input value in sync with prop changes, but only when it's a significant change
   $effect(() => {
@@ -35,6 +38,38 @@
     }
     showDropdown = filteredOptions.length > 0
     selectedIndex = -1
+    updateDropdownPosition()
+  }
+
+  function updateDropdownPosition() {
+    if (!containerElement || !showDropdown) return
+    
+    // Use setTimeout to ensure dropdown is rendered
+    setTimeout(() => {
+      if (!containerElement) return
+      
+      const containerRect = containerElement.getBoundingClientRect()
+      const dropdownHeight = 200 // max-height of dropdown
+      const viewportHeight = window.innerHeight
+      const spaceBelow = viewportHeight - containerRect.bottom
+      const spaceAbove = containerRect.top
+      
+      // Calculate dropdown coordinates
+      dropdownCoords = {
+        left: containerRect.left,
+        width: containerRect.width,
+        top: 0 // Will be set based on position
+      }
+      
+      // Show dropdown above if there's more space above or if there's not enough space below
+      if (spaceAbove > spaceBelow && spaceBelow < dropdownHeight) {
+        dropdownPosition = 'top'
+        dropdownCoords.top = containerRect.top - dropdownHeight - 2 // 2px margin
+      } else {
+        dropdownPosition = 'bottom'
+        dropdownCoords.top = containerRect.bottom + 2 // 2px margin
+      }
+    }, 0)
   }
 
   function selectOption(option: OptionItem) {
@@ -85,6 +120,7 @@
     filteredOptions = options
     showDropdown = options.length > 0
     selectedIndex = -1
+    updateDropdownPosition()
   }
 
   function handleClick() {
@@ -92,6 +128,7 @@
     filteredOptions = options
     showDropdown = options.length > 0
     selectedIndex = -1
+    updateDropdownPosition()
   }
 
   function handleBlur() {
@@ -103,7 +140,7 @@
   }
 </script>
 
-<div class="combobox-container">
+<div class="combobox-container" bind:this={containerElement}>
   <input
     type="text"
     class="combobox-input"
@@ -123,7 +160,10 @@
   </div>
   
   {#if showDropdown}
-    <div class="combobox-dropdown">
+    <div 
+      class="combobox-dropdown {dropdownPosition}" 
+      style="top: {dropdownCoords.top}px; left: {dropdownCoords.left}px; width: {dropdownCoords.width}px;"
+    >
       {#each filteredOptions as option, index (option.title)}
         <button
           type="button"
@@ -179,18 +219,14 @@
   }
 
   .combobox-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
+    position: fixed;
     background: white;
     border: 1px solid #ddd;
     border-radius: 4px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     max-height: 200px;
     overflow-y: auto;
-    z-index: 1000;
-    margin-top: 2px;
+    z-index: 9999;
   }
 
   .combobox-option {
