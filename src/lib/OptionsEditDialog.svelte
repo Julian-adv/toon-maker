@@ -1,7 +1,6 @@
 <!-- Dialog component for editing options list -->
 <script lang="ts">
   import type { OptionItem } from './types'
-  import ComboBox from './ComboBox.svelte'
   import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
   interface Props {
     show: boolean
@@ -23,58 +22,76 @@
     onValueChange
   }: Props = $props()
 
-  let newOptionTitle = $state(value.title)
-  let newOptionValue = $state(value.value)
-  let titleComboValue = $state<OptionItem>({ title: value.title || '', value: value.title || '' })
+  let selectedOption = $state<OptionItem>(value)
+  let newOptionTitle = $state('')
+  let newOptionValue = $state('')
 
-  // Original values to compare against
-  let originalTitle = $state(value.title)
-  let originalValue = $state(value.value)
 
-  // Determine save button label based on changes
-  let saveButtonLabel = $derived.by(() => {
-    const titleChanged = newOptionTitle !== originalTitle
-    const valueChanged = newOptionValue !== originalValue
-
-    if (titleChanged) {
-      return 'Add'
-    } else if (valueChanged) {
-      return 'Update'
-    } else {
-      return 'Save'
-    }
-  })
 
   // Update form values when dialog opens
   $effect(() => {
     if (show) {
-      originalTitle = value.title || ''
-      originalValue = value.value || ''
-      newOptionTitle = value.title || ''
+      selectedOption = value
+      newOptionTitle = ''
       newOptionValue = value.value || ''
-      titleComboValue = { title: value.title || '', value: value.title || '' }
     }
   })
 
-  function handleTitleComboChange(newValue: OptionItem) {
-    titleComboValue = newValue
-    newOptionTitle = newValue.title
-    newOptionValue = newValue.value
+  function handleOptionSelect(option: OptionItem) {
+    selectedOption = option
+    newOptionTitle = ''
+    newOptionValue = option.value || ''
   }
 
-  function handleOptionSelected(selectedValue: OptionItem) {
-    // Reset original values only when user selects from dropdown list
-    originalTitle = selectedValue.title
-    originalValue = selectedValue.value
+  function handleAddNewOption() {
+    // Check if title already exists
+    const titleExists = options.some(option => 
+      option.title.toLowerCase() === newOptionTitle.trim().toLowerCase()
+    )
+    
+    if (titleExists) {
+      alert('This title already exists!')
+      return
+    }
+    
+    const newOption: OptionItem = {
+      title: newOptionTitle.trim(),
+      value: ''
+    }
+    
+    const updatedOptions = [...options, newOption]
+    onOptionsChange(updatedOptions)
+    
+    // Select the newly added option
+    selectedOption = newOption
+    onValueChange(newOption)
+    
+    // Clear the input fields
+    newOptionTitle = ''
+    newOptionValue = ''
   }
 
-  function handleDeleteCurrentValue() {
-    const updatedOptions = options.filter((option) => option.title !== value.title)
+  function handleUpdateOption() {
+    if (newOptionValue.trim()) {
+      const updatedOptions = options.map(option => 
+        option.title === selectedOption.title 
+          ? { ...option, value: newOptionValue.trim() }
+          : option
+      )
+      onOptionsChange(updatedOptions)
+      selectedOption = { ...selectedOption, value: newOptionValue.trim() }
+      onValueChange(selectedOption)
+      newOptionValue = ''
+    }
+  }
+
+  function handleDeleteOption() {
+    const updatedOptions = options.filter((option) => option.title !== selectedOption.title)
     onOptionsChange(updatedOptions)
 
     // Select the closest remaining option
     if (updatedOptions.length > 0) {
-      const currentIndex = options.findIndex((option) => option.title === value.title)
+      const currentIndex = options.findIndex((option) => option.title === selectedOption.title)
       let newIndex = currentIndex
       if (currentIndex >= updatedOptions.length) {
         newIndex = updatedOptions.length - 1
@@ -82,69 +99,18 @@
       if (newIndex < 0) {
         newIndex = 0
       }
-      value = updatedOptions[newIndex]
-      onValueChange(value)
-      
-      // Reset original values to the new current value
-      originalTitle = value.title
-      originalValue = value.value
-      
-      // Reset form values to match the new current value
-      newOptionTitle = value.title
-      newOptionValue = value.value
+      selectedOption = updatedOptions[newIndex]
+      onValueChange(selectedOption)
     } else {
-      value.title = ''
-      value.value = ''
-      onValueChange(value)
-      
-      // Reset original values to empty
-      originalTitle = ''
-      originalValue = ''
-      
-      // Reset form values to empty
-      newOptionTitle = ''
-      newOptionValue = ''
+      selectedOption = { title: '', value: '' }
+      onValueChange(selectedOption)
     }
+    newOptionTitle = ''
+    newOptionValue = ''
   }
 
   function handleSave() {
-    if (newOptionValue.trim()) {
-      const titleChanged = newOptionTitle !== originalTitle
-      const valueChanged = newOptionValue !== originalValue
-      
-      if (titleChanged) {
-        // Add new option
-        const newOption: OptionItem = {
-          title: newOptionTitle.trim() || newOptionValue.trim(),
-          value: newOptionValue.trim()
-        }
-        const updatedOptions = [...options, newOption]
-        onOptionsChange(updatedOptions)
-        
-        // Update current value to the new option
-        value.title = newOption.title
-        value.value = newOption.value
-        onValueChange(value)
-      } else if (valueChanged) {
-        // Update existing option's value
-        const updatedOptions = options.map(option => 
-          option.title === originalTitle 
-            ? { ...option, value: newOptionValue.trim() }
-            : option
-        )
-        onOptionsChange(updatedOptions)
-        
-        // Update current value
-        value.value = newOptionValue.trim()
-        onValueChange(value)
-      } else {
-        // No changes, just make sure current value is set
-        onValueChange(value)
-      }
-      
-      newOptionTitle = ''
-      newOptionValue = ''
-    }
+    onValueChange(selectedOption)
     onClose()
   }
 </script>
@@ -174,41 +140,81 @@
         </button>
       </div>
       <div class="dialog-body">
-        <div class="form-section">
-          <div>
-            <label for="option-title">Title:</label>
-            <ComboBox
-              bind:value={titleComboValue}
-              {options}
-              placeholder="Enter option title"
-              onValueChange={handleTitleComboChange}
-              onOptionSelected={handleOptionSelected}
-            />
+        <div class="grid-container">
+          <!-- Options List -->
+          <div class="options-list">
+            {#each options as option (option.title)}
+              <button 
+                class="option-item" 
+                class:selected={option.title === selectedOption.title}
+                onclick={() => handleOptionSelect(option)}
+              >
+                {option.title}
+              </button>
+            {/each}
           </div>
-          <div>
-            <label for="option-value">Value:</label>
+          
+          <!-- Selected Option Header -->
+          <div class="selected-option-header">
+            <h4>{selectedOption.title || 'No option selected'}</h4>
+            <button 
+              class="delete-option-btn" 
+              onclick={handleDeleteOption}
+              disabled={!selectedOption.title || options.length === 0}
+              aria-label="Delete option"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path d="M19,6V20a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6M8,6V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2V6"
+                ></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Option Value Textarea -->
+          <div class="textarea-area">
             <AutoCompleteTextarea
               id="option-value"
               bind:value={newOptionValue}
               placeholder="Enter option value"
-              rows={6}
+              rows={12}
             />
           </div>
+          
+          <!-- Left Controls -->
+          <div class="left-controls">
+            <input 
+              type="text" 
+              bind:value={newOptionTitle}
+              placeholder="New option title"
+              class="new-option-input"
+            />
+            <button 
+              class="add-option-btn" 
+              onclick={handleAddNewOption}
+              disabled={!newOptionTitle.trim()}
+            >
+              Add
+            </button>
+          </div>
+          
+          <!-- Update Button -->
+          <button 
+            class="update-option-btn" 
+            onclick={handleUpdateOption}
+            disabled={!newOptionValue.trim()}
+          >
+            Update
+          </button>
         </div>
       </div>
       <div class="dialog-footer">
-        <button
-          type="button"
-          class="delete-current-btn"
-          onclick={handleDeleteCurrentValue}
-          disabled={!value.value || options.length === 0}
-        >
-          Delete
-        </button>
         <div class="dialog-actions">
           <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
           <button type="button" class="dialog-save-btn" onclick={handleSave}>
-            {saveButtonLabel}
+            Select
           </button>
         </div>
       </div>
@@ -235,7 +241,7 @@
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     width: 90%;
-    max-width: 500px;
+    max-width: 800px;
     max-height: 80vh;
     overflow: hidden;
     display: flex;
@@ -303,39 +309,170 @@
     background: #5a6268;
   }
 
-  .delete-current-btn {
+  .grid-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    grid-template-rows: 1fr auto auto;
+    gap: 1rem;
+    height: 100%;
+    grid-template-areas: 
+      "options-list selected-header"
+      "options-list textarea"
+      "left-controls update-btn";
+  }
+
+  .options-list {
+    grid-area: options-list;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 350px;
+  }
+
+  .option-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: white;
+    border: none;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.875rem;
+  }
+
+  .option-item:hover {
+    background: #f8f9fa;
+  }
+
+  .option-item.selected {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+
+  .option-item:last-child {
+    border-bottom: none;
+  }
+
+
+  .new-option-input {
+    flex: 2;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    height: 36px;
+    box-sizing: border-box;
+  }
+
+  .add-option-btn {
     padding: 0.5rem 1rem;
-    background: #dc3545;
+    background: #28a745;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.875rem;
     transition: all 0.2s ease;
+    height: 36px;
   }
 
-  .delete-current-btn:hover:not(:disabled) {
-    background: #c82333;
+  .add-option-btn:hover:not(:disabled) {
+    background: #218838;
   }
 
-  .delete-current-btn:disabled {
+  .add-option-btn:disabled {
     background: #cccccc;
     cursor: not-allowed;
   }
 
-  .form-section {
+  .selected-option-header {
+    grid-area: selected-header;
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  .form-section label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #555;
+  .selected-option-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
     text-align: left;
   }
+
+  .delete-option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: #fee;
+    border: 1px solid #fcc;
+    border-radius: 4px;
+    color: #c33;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .delete-option-btn:hover:not(:disabled) {
+    background: #fcc;
+    border-color: #faa;
+    color: #a11;
+  }
+
+  .delete-option-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  .textarea-area {
+    grid-area: textarea;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .textarea-area :global(textarea) {
+    min-height: 300px !important;
+    height: 300px !important;
+    flex: 1;
+    resize: vertical !important;
+    overflow: auto !important;
+  }
+
+  .left-controls {
+    grid-area: left-controls;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .update-option-btn {
+    grid-area: update-btn;
+    padding: 0.375rem 0.75rem;
+    background: #2196f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    height: 36px;
+    align-self: start;
+    width: fit-content;
+    justify-self: end;
+  }
+
+  .update-option-btn:hover:not(:disabled) {
+    background: #1976d2;
+  }
+
+  .update-option-btn:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
 
   .dialog-actions {
     display: flex;
