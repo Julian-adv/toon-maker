@@ -38,12 +38,25 @@
   })
 
   function handleOptionSelect(option: OptionItem) {
-    selectedOption = option
-    newOptionTitle = ''
-    newOptionValue = option.value || ''
+    // Auto-update current option before switching
+    if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
+      handleUpdateOption()
+    }
+    
+    // Use setTimeout to ensure state updates are completed first
+    setTimeout(() => {
+      selectedOption = option
+      newOptionTitle = ''
+      newOptionValue = option.value || ''
+    }, 0)
   }
 
   function handleAddNewOption() {
+    // Auto-update current option before adding new one
+    if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
+      handleUpdateOption()
+    }
+    
     // Check if title already exists
     const titleExists = options.some(option => 
       option.title.toLowerCase() === newOptionTitle.trim().toLowerCase()
@@ -110,6 +123,11 @@
   }
 
   function handleSave() {
+    // Auto-update current option before closing
+    if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
+      handleUpdateOption()
+    }
+    
     onValueChange(selectedOption)
     onClose()
   }
