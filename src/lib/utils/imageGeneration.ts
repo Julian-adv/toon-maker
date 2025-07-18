@@ -40,11 +40,20 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     options
 
   try {
-    // Build the combined prompt from dynamic categories (using resolved random values)
-    const promptValue = promptsData.categories
+    // Separate negative category from positive categories
+    const negativeCategory = promptsData.categories.find(cat => cat.id === 'negative')
+    const positiveCategories = promptsData.categories.filter(cat => cat.id !== 'negative')
+
+    // Build the combined positive prompt from dynamic categories (using resolved random values)
+    const promptValue = positiveCategories
       .map(category => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
       .filter(Boolean)
       .join(', ')
+
+    // Build the negative prompt
+    const negativePrompt = negativeCategory 
+      ? getEffectiveCategoryValueFromResolved(negativeCategory, resolvedRandomValues)
+      : ''
 
     if (!promptValue.trim()) {
       onError('Prompt is empty')
@@ -62,6 +71,7 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
 
     // Update workflow with prompts
     workflow['11'].inputs.text = promptValue
+    workflow['12'].inputs.text = negativePrompt
 
     // Configure workflow based on settings
     configureWorkflow(workflow, promptsData, settings)
