@@ -73,7 +73,7 @@
       showSuggestions = false
       return
     }
-    
+
     const { word } = getCurrentWord()
 
     if (word.length < 2) {

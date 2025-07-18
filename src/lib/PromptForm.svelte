@@ -104,10 +104,8 @@
         class="category-item {draggedIndex === index ? 'dragging' : ''} {dragOverIndex === index
           ? 'drag-over'
           : ''}"
-        draggable="true"
         role="listitem"
         aria-label="Category: {category.name}"
-        ondragstart={(e) => handleDragStart(e, index)}
         ondragover={(e) => handleDragOver(e, index)}
         ondragleave={handleDragLeave}
         ondrop={(e) => handleDrop(e, index)}
@@ -123,6 +121,7 @@
           onOptionsChange={handleCategoryOptionsChange(category.id)}
           onDelete={() => handleRemoveCategory(category.id)}
           resolvedRandomValue={$resolvedRandomValues[category.id]}
+          onDragStart={(e) => handleDragStart(e, index)}
         />
       </div>
     {/each}

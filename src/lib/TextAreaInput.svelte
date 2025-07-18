@@ -14,6 +14,7 @@
     onOptionsChange: (options: OptionItem[]) => void
     onDelete: () => void
     resolvedRandomValue?: OptionItem
+    onDragStart?: (event: DragEvent) => void
   }
 
   let {
@@ -25,7 +26,8 @@
     onValueChange,
     onOptionsChange,
     onDelete,
-    resolvedRandomValue
+    resolvedRandomValue,
+    onDragStart
   }: Props = $props()
 
   let showEditDialog = $state(false)
@@ -63,9 +65,16 @@
 </script>
 
 <div class="input-group">
-  <div class="label-container">
+  <div
+    class="label-container"
+    draggable="true"
+    ondragstart={onDragStart}
+    title="Drag to reorder"
+    role="button"
+    tabindex="0"
+  >
     <div class="label-with-drag">
-      <div class="drag-handle" title="Drag to reorder">
+      <div class="drag-handle">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="9" cy="12" r="1" />
           <circle cx="9" cy="5" r="1" />
@@ -186,6 +195,15 @@
     align-items: center;
     gap: 8px;
     justify-content: space-between;
+    cursor: grab;
+    padding: 4px;
+    margin: -4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+
+  .label-container:active {
+    cursor: grabbing;
   }
 
   .label-with-drag {
