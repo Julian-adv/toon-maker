@@ -239,8 +239,6 @@ Steps: ${steps}, Sampler: ${samplerName}, Schedule type: ${scheduleType}, CFG sc
       const finalBuffer = Buffer.from(encodeChunks(chunks))
 
       await fs.writeFile(filePath, finalBuffer)
-
-      console.log('Added parameters metadata:', parametersText)
     } else {
       // Save without metadata if no prompt provided
       await fs.writeFile(filePath, imageBuffer)

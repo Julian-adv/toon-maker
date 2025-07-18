@@ -23,7 +23,6 @@ export async function fetchCheckpoints(): Promise<string[]> {
       data.CheckpointLoaderSimple.input.required.ckpt_name
     ) {
       const checkpoints = data.CheckpointLoaderSimple.input.required.ckpt_name[0]
-      console.log('Available checkpoints:', checkpoints)
       return checkpoints
     } else {
       console.error('Could not find checkpoints in API response:', data)
@@ -63,21 +62,18 @@ export function connectWebSocket(
   }
 
   ws.onopen = () => {
-    console.log('WebSocket connection established')
+    // WebSocket connection established
   }
 
   ws.onmessage = (event) => {
     if (typeof event.data === 'string') {
       const message = JSON.parse(event.data)
-      console.log('WS Message:', message)
       if (message.type === 'executing') {
         const data = message.data
         if (data.prompt_id === promptId) {
           lastExecutingNode = data.node
-          console.log('Node executing:', data.node)
           if (data.node === null) {
             // Execution is done for this prompt
-            console.log('Execution finished for prompt:', promptId)
             callbacks.onLoadingChange(false)
             ws.close()
           } else {
@@ -105,19 +101,15 @@ export function connectWebSocket(
     } else if (event.data instanceof ArrayBuffer) {
       // Check if the last executing node was our SaveImageWebsocket node
       // AND that the current prompt ID matches.
-      console.log('Received ArrayBuffer, lastExecutingNode:', lastExecutingNode, 'finalSaveNodeId:', finalSaveNodeId, 'promptId:', promptId)
       if (
         lastExecutingNode === finalSaveNodeId &&
         promptId /* && execution prompt_id matches */
       ) {
-        console.log('Creating image blob from ArrayBuffer, size:', event.data.byteLength)
         const imageBlob = new Blob([event.data.slice(8)], { type: 'image/png' })
         callbacks.onImageReceived(imageBlob)
         callbacks.onLoadingChange(false)
         ws.close()
         lastExecutingNode = null
-      } else {
-        console.log('ArrayBuffer received but conditions not met')
       }
     }
   }
@@ -128,6 +120,6 @@ export function connectWebSocket(
   }
 
   ws.onclose = () => {
-    console.log('WebSocket connection closed')
+    // WebSocket connection closed
   }
 }

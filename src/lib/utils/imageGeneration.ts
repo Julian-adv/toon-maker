@@ -188,8 +188,6 @@ async function submitToComfyUI(
     client_id: clientId
   }
 
-  console.log('Sending payload to ComfyUI:', JSON.stringify(payload, null, 2))
-
   // Submit prompt to ComfyUI
   const response = await fetch('http://127.0.0.1:8188/prompt', {
     method: 'POST',
@@ -206,7 +204,6 @@ async function submitToComfyUI(
   }
 
   const result = await response.json()
-  console.log('Prompt submitted successfully:', result)
 
   // Connect to WebSocket for real-time updates
   const wsCallbacks: WebSocketCallbacks = {

@@ -71,10 +71,6 @@ export async function saveImage(
       return null
     } else {
       const result = await response.json()
-      console.log('Image saved successfully:', result.filePath)
-      if (result.prompt) {
-        console.log('Prompt metadata added:', result.prompt)
-      }
       // Return the full file path
       return result.filePath
     }
