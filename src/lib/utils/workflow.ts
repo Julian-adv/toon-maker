@@ -88,7 +88,7 @@ export const defaultWorkflowPrompt = {
   },
   '10': {
     inputs: {
-      ckpt_name: 'kakarot28D2025_v2025Semireal.safetensors'
+      ckpt_name: 'zenijiMixKIllust_v10.safetensors'
     },
     class_type: 'CheckpointLoaderSimple',
     _meta: {

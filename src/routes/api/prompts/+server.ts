@@ -61,6 +61,12 @@ function createDefaultCategories(): PromptCategory[] {
       name: 'Backgrounds',
       values: [],
       currentValue: { title: '', value: '' }
+    },
+    {
+      id: 'negative',
+      name: 'Negative',
+      values: [],
+      currentValue: { title: '', value: '' }
     }
   ]
 }
