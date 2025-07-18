@@ -26,6 +26,7 @@
   let selectedOption = $state<OptionItem>(value)
   let newOptionTitle = $state('')
   let newOptionValue = $state('')
+  let optionsListElement = $state<HTMLDivElement | undefined>()
 
 
 
@@ -35,8 +36,25 @@
       selectedOption = value
       newOptionTitle = ''
       newOptionValue = value.value || ''
+      
+      // Scroll to selected option after dialog opens
+      setTimeout(() => {
+        scrollToSelectedOption()
+      }, 100)
     }
   })
+
+  function scrollToSelectedOption() {
+    if (!optionsListElement || !selectedOption.title) return
+    
+    const selectedButton = optionsListElement.querySelector('.option-item.selected') as HTMLElement
+    if (selectedButton) {
+      selectedButton.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }
+  }
 
   function handleOptionSelect(option: OptionItem) {
     // Auto-update current option before switching
@@ -171,7 +189,7 @@
       <div class="dialog-body">
         <div class="grid-container">
           <!-- Options List -->
-          <div class="options-list">
+          <div class="options-list" bind:this={optionsListElement}>
             {#each options as option (option.title)}
               <button 
                 class="option-item" 
