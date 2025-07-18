@@ -2,6 +2,7 @@
 <script lang="ts">
   import type { OptionItem } from './types'
   import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
+  import { savePromptsData } from './stores/promptsStore'
   interface Props {
     show: boolean
     label: string
@@ -122,13 +123,23 @@
     newOptionValue = ''
   }
 
-  function handleSave() {
+  async function handleSave() {
     // Auto-update current option before closing
     if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
       handleUpdateOption()
     }
     
     onValueChange(selectedOption)
+    
+    // Save to prompts.json
+    try {
+      await savePromptsData()
+    } catch (error) {
+      console.error('Failed to save prompts:', error)
+      alert('Failed to save prompts. Please try again.')
+      return
+    }
+    
     onClose()
   }
 </script>
@@ -218,21 +229,13 @@
             </button>
           </div>
           
-          <!-- Update Button -->
-          <button 
-            class="update-option-btn" 
-            onclick={handleUpdateOption}
-            disabled={!newOptionValue.trim()}
-          >
-            Update
-          </button>
         </div>
       </div>
       <div class="dialog-footer">
         <div class="dialog-actions">
           <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
           <button type="button" class="dialog-save-btn" onclick={handleSave}>
-            Select
+            Save
           </button>
         </div>
       </div>
@@ -307,7 +310,7 @@
 
   .dialog-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: 1rem;
     border-top: 1px solid #eee;
   }
@@ -336,7 +339,7 @@
     grid-template-areas: 
       "options-list selected-header"
       "options-list textarea"
-      "left-controls update-btn";
+      "left-controls .";
   }
 
   .options-list {
@@ -466,30 +469,6 @@
     align-items: center;
   }
 
-  .update-option-btn {
-    grid-area: update-btn;
-    padding: 0.375rem 0.75rem;
-    background: #2196f3;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.2s ease;
-    height: 36px;
-    align-self: start;
-    width: fit-content;
-    justify-self: end;
-  }
-
-  .update-option-btn:hover:not(:disabled) {
-    background: #1976d2;
-  }
-
-  .update-option-btn:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-  }
 
 
   .dialog-actions {
