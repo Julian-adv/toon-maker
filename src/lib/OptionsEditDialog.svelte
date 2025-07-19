@@ -13,22 +13,14 @@
     onValueChange: (value: OptionItem) => void
   }
 
-  let {
-    show,
-    label,
-    options,
-    value,
-    onClose,
-    onOptionsChange,
-    onValueChange
-  }: Props = $props()
+  let { show, label, options, value, onClose, onOptionsChange, onValueChange }: Props = $props()
 
   let selectedOption = $state<OptionItem>(value)
   let newOptionTitle = $state('')
   let newOptionValue = $state('')
   let optionsListElement = $state<HTMLDivElement | undefined>()
-
-
+  let draggedIndex = $state<number | null>(null)
+  let dragOverIndex = $state<number | null>(null)
 
   // Update form values when dialog opens
   $effect(() => {
@@ -36,7 +28,7 @@
       selectedOption = value
       newOptionTitle = ''
       newOptionValue = value.value || ''
-      
+
       // Scroll to selected option after dialog opens
       setTimeout(() => {
         scrollToSelectedOption()
@@ -46,7 +38,7 @@
 
   function scrollToSelectedOption() {
     if (!optionsListElement || !selectedOption.title) return
-    
+
     const selectedButton = optionsListElement.querySelector('.option-item.selected') as HTMLElement
     if (selectedButton) {
       selectedButton.scrollIntoView({
@@ -61,7 +53,7 @@
     if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
       handleUpdateOption()
     }
-    
+
     // Use setTimeout to ensure state updates are completed first
     setTimeout(() => {
       selectedOption = option
@@ -75,29 +67,29 @@
     if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
       handleUpdateOption()
     }
-    
+
     // Check if title already exists
-    const titleExists = options.some(option => 
-      option.title.toLowerCase() === newOptionTitle.trim().toLowerCase()
+    const titleExists = options.some(
+      (option) => option.title.toLowerCase() === newOptionTitle.trim().toLowerCase()
     )
-    
+
     if (titleExists) {
       alert('This title already exists!')
       return
     }
-    
+
     const newOption: OptionItem = {
       title: newOptionTitle.trim(),
       value: ''
     }
-    
+
     const updatedOptions = [...options, newOption]
     onOptionsChange(updatedOptions)
-    
+
     // Select the newly added option
     selectedOption = newOption
     onValueChange(newOption)
-    
+
     // Clear the input fields
     newOptionTitle = ''
     newOptionValue = ''
@@ -105,10 +97,8 @@
 
   function handleUpdateOption() {
     if (newOptionValue.trim()) {
-      const updatedOptions = options.map(option => 
-        option.title === selectedOption.title 
-          ? { ...option, value: newOptionValue.trim() }
-          : option
+      const updatedOptions = options.map((option) =>
+        option.title === selectedOption.title ? { ...option, value: newOptionValue.trim() } : option
       )
       onOptionsChange(updatedOptions)
       selectedOption = { ...selectedOption, value: newOptionValue.trim() }
@@ -146,9 +136,9 @@
     if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
       handleUpdateOption()
     }
-    
+
     onValueChange(selectedOption)
-    
+
     // Save to prompts.json
     try {
       await savePromptsData()
@@ -157,8 +147,69 @@
       alert('Failed to save prompts. Please try again.')
       return
     }
-    
+
     onClose()
+  }
+
+  // Drag and drop handlers
+  function handleDragStart(event: DragEvent, index: number) {
+    draggedIndex = index
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/plain', index.toString())
+    }
+  }
+
+  function handleContainerDragOver(event: DragEvent) {
+    event.preventDefault()
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move'
+    }
+
+    // Find the closest button element
+    const target = event.target as HTMLElement
+    const button = target.closest('.option-item') as HTMLButtonElement
+    if (button && optionsListElement) {
+      const buttons = Array.from(optionsListElement.querySelectorAll('.option-item'))
+      const newIndex = buttons.indexOf(button)
+      if (newIndex !== -1 && dragOverIndex !== newIndex) {
+        dragOverIndex = newIndex
+      }
+    }
+  }
+
+  function handleContainerDragLeave(event: DragEvent) {
+    // Only clear if leaving the container entirely
+    if (!optionsListElement?.contains(event.relatedTarget as Node)) {
+      dragOverIndex = null
+    }
+  }
+
+  function handleContainerDrop(event: DragEvent) {
+    event.preventDefault()
+    const target = event.target as HTMLElement
+    const button = target.closest('.option-item') as HTMLButtonElement
+
+    if (button && optionsListElement && draggedIndex !== null) {
+      const buttons = Array.from(optionsListElement.querySelectorAll('.option-item'))
+      const dropIndex = buttons.indexOf(button)
+
+      if (dropIndex !== -1 && draggedIndex !== dropIndex) {
+        // Reorder the options array
+        const reorderedOptions = [...options]
+        const [removed] = reorderedOptions.splice(draggedIndex, 1)
+        reorderedOptions.splice(dropIndex, 0, removed)
+        onOptionsChange(reorderedOptions)
+      }
+    }
+
+    draggedIndex = null
+    dragOverIndex = null
+  }
+
+  function handleDragEnd() {
+    draggedIndex = null
+    dragOverIndex = null
   }
 </script>
 
@@ -169,11 +220,19 @@
     role="button"
     tabindex="0"
     onkeydown={(e) => e.key === 'Escape' && onClose()}
+    ondragover={(e) => e.preventDefault()}
+    ondragenter={(e) => e.preventDefault()}
+    ondragleave={(e) => e.preventDefault()}
+    ondrop={(e) => e.preventDefault()}
   >
     <div
       class="dialog"
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.stopPropagation()}
+      ondragover={(e) => e.stopPropagation()}
+      ondragenter={(e) => e.stopPropagation()}
+      ondragleave={(e) => e.stopPropagation()}
+      ondrop={(e) => e.stopPropagation()}
       role="dialog"
       tabindex="-1"
     >
@@ -189,37 +248,53 @@
       <div class="dialog-body">
         <div class="grid-container">
           <!-- Options List -->
-          <div class="options-list" bind:this={optionsListElement}>
-            {#each options as option (option.title)}
-              <button 
-                class="option-item" 
+          <div
+            class="options-list"
+            bind:this={optionsListElement}
+            ondragover={handleContainerDragOver}
+            ondragleave={handleContainerDragLeave}
+            ondrop={handleContainerDrop}
+            role="listbox"
+            aria-label="Draggable options list"
+            tabindex="0"
+          >
+            {#each options as option, index (option.title)}
+              <button
+                class="option-item"
                 class:selected={option.title === selectedOption.title}
+                class:dragging={draggedIndex === index}
+                class:drag-over={dragOverIndex === index}
+                draggable="true"
                 onclick={() => handleOptionSelect(option)}
+                ondragstart={(e) => handleDragStart(e, index)}
+                ondragend={handleDragEnd}
+                title="Drag to reorder"
               >
                 {option.title}
               </button>
             {/each}
           </div>
-          
+
           <!-- Selected Option Header -->
           <div class="selected-option-header">
             <h4>{selectedOption.title || 'No option selected'}</h4>
-            <button 
-              class="delete-option-btn" 
+            <button
+              class="delete-option-btn"
               onclick={handleDeleteOption}
               disabled={!selectedOption.title || options.length === 0}
               aria-label="Delete option"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <polyline points="3,6 5,6 21,6"></polyline>
-                <path d="M19,6V20a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6M8,6V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2V6"
+                <path
+                  d="M19,6V20a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6M8,6V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2V6"
                 ></path>
                 <line x1="10" y1="11" x2="10" y2="17"></line>
                 <line x1="14" y1="11" x2="14" y2="17"></line>
               </svg>
             </button>
           </div>
-          
+
           <!-- Option Value Textarea -->
           <div class="textarea-area">
             <AutoCompleteTextarea
@@ -229,32 +304,29 @@
               rows={12}
             />
           </div>
-          
+
           <!-- Left Controls -->
           <div class="left-controls">
-            <input 
-              type="text" 
+            <AutoCompleteTextarea
+              id="new-option-title"
               bind:value={newOptionTitle}
               placeholder="New option title"
-              class="new-option-input"
+              rows={1}
             />
-            <button 
-              class="add-option-btn" 
+            <button
+              class="add-option-btn"
               onclick={handleAddNewOption}
               disabled={!newOptionTitle.trim()}
             >
               Add
             </button>
           </div>
-          
         </div>
       </div>
       <div class="dialog-footer">
         <div class="dialog-actions">
           <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
-          <button type="button" class="dialog-save-btn" onclick={handleSave}>
-            Save
-          </button>
+          <button type="button" class="dialog-save-btn" onclick={handleSave}> Save </button>
         </div>
       </div>
     </div>
@@ -272,7 +344,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 9999;
+    pointer-events: all;
   }
 
   .dialog {
@@ -354,10 +427,10 @@
     grid-template-rows: 1fr auto auto;
     gap: 1rem;
     height: 100%;
-    grid-template-areas: 
-      "options-list selected-header"
-      "options-list textarea"
-      "left-controls .";
+    grid-template-areas:
+      'options-list selected-header'
+      'options-list textarea'
+      'left-controls .';
   }
 
   .options-list {
@@ -394,15 +467,35 @@
     border-bottom: none;
   }
 
+  .option-item:active {
+    cursor: grabbing;
+  }
 
-  .new-option-input {
+  .option-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+
+  .option-item.drag-over {
+    border-left: 3px solid #4caf50;
+    background: #f8f9fa;
+    transform: translateX(2px);
+  }
+
+  .left-controls :global(.textarea-container) {
     flex: 2;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    height: 36px;
-    box-sizing: border-box;
+  }
+
+  .left-controls :global(.textarea) {
+    padding: 8px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    resize: none !important;
+    box-sizing: border-box !important;
   }
 
   .add-option-btn {
@@ -486,8 +579,6 @@
     gap: 0.5rem;
     align-items: center;
   }
-
-
 
   .dialog-actions {
     display: flex;
