@@ -34,11 +34,11 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['18', 0],
-      model: ['10', 0],
-      clip: ['10', 1],
+      model: ['28', 0],
+      clip: ['28', 1],
       vae: ['10', 2],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       bbox_detector: ['20', 0],
       sam_model_opt: ['6', 0]
     },
@@ -65,9 +65,9 @@ export const defaultWorkflowPrompt = {
       sampler_name: 'euler_ancestral',
       scheduler: 'simple',
       denoise: 1,
-      model: ['10', 0],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      model: ['28', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       latent_image: ['9', 0]
     },
     class_type: 'KSampler',
@@ -77,8 +77,8 @@ export const defaultWorkflowPrompt = {
   },
   '9': {
     inputs: {
-      width: 832,
-      height: 1216,
+      width: ['28', 5],
+      height: ['28', 6],
       batch_size: 1
     },
     class_type: 'EmptyLatentImage',
@@ -88,7 +88,7 @@ export const defaultWorkflowPrompt = {
   },
   '10': {
     inputs: {
-      ckpt_name: 'zenijiMixKIllust_v10.safetensors'
+      ckpt_name: ''
     },
     class_type: 'CheckpointLoaderSimple',
     _meta: {
@@ -97,7 +97,7 @@ export const defaultWorkflowPrompt = {
   },
   '11': {
     inputs: {
-      text: 'maid,christian louboutin high heels',
+      text: '',
       clip: ['10', 1]
     },
     class_type: 'CLIPTextEncode',
@@ -144,9 +144,9 @@ export const defaultWorkflowPrompt = {
       sampler_name: 'euler_ancestral',
       scheduler: 'simple',
       denoise: 0.4000000000000001,
-      model: ['10', 0],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      model: ['28', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       latent_image: ['14', 0]
     },
     class_type: 'KSampler',
@@ -204,17 +204,37 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['15', 0],
-      model: ['10', 0],
-      clip: ['10', 1],
+      model: ['28', 0],
+      clip: ['28', 1],
       vae: ['10', 2],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       bbox_detector: ['20', 0],
       sam_model_opt: ['6', 0]
     },
     class_type: 'FaceDetailer',
     _meta: {
       title: 'FaceDetailer2'
+    }
+  },
+  '28': {
+    inputs: {
+      wildcard_text: '',
+      populated_text: '',
+      mode: true,
+      'Select to add LoRA': 'Select the LoRA to add to the text',
+      'Select to add Wildcard': 'Select the Wildcard to add to the text',
+      width: 832,
+      height: 1216,
+      seed: 566998447548836,
+      overall: true,
+      model: ['10', 0],
+      clip: ['10', 1],
+      negative: ['12', 0]
+    },
+    class_type: 'WildcardDivide',
+    _meta: {
+      title: 'Wildcard Divide'
     }
   }
 }

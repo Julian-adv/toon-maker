@@ -70,7 +70,8 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     const workflow = JSON.parse(JSON.stringify(defaultWorkflowPrompt))
 
     // Update workflow with prompts
-    workflow['11'].inputs.text = promptValue
+    workflow['28'].inputs.wildcard_text = promptValue
+    workflow['28'].inputs.populated_text = promptValue
     workflow['12'].inputs.text = negativePrompt
 
     // Configure workflow based on settings
@@ -130,12 +131,26 @@ function configureWorkflow(
 }
 
 function applySeedsToWorkflow(workflow: ComfyUIWorkflow) {
-  // Apply random seed to relevant KSamplers
+  // Apply random seed to relevant nodes
   const seed = Math.floor(Math.random() * 10000000000000000)
+  
+  // Set seed for WildcardDivide node
+  workflow['28'].inputs.seed = seed
+  
+  // Set seed for KSamplers
   workflow['8'].inputs.seed = seed
 
   if (workflow['17']) {
     workflow['17'].inputs.seed = seed + 1
+  }
+  
+  // Set seed for FaceDetailer nodes
+  if (workflow['5']) {
+    workflow['5'].inputs.seed = seed + 2
+  }
+  
+  if (workflow['22']) {
+    workflow['22'].inputs.seed = seed + 3
   }
 }
 
