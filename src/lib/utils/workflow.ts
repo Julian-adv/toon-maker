@@ -7,13 +7,13 @@ export const defaultWorkflowPrompt = {
     inputs: {
       guide_size: 512,
       guide_size_for: true,
-      max_size: 1024,
+      max_size: 1536,
       seed: 836267740683999,
-      steps: 20,
-      cfg: 8,
+      steps: 15,
+      cfg: 4.5,
       sampler_name: 'euler_ancestral',
-      scheduler: 'simple',
-      denoise: 0.5,
+      scheduler: 'karras',
+      denoise: 0.4,
       feather: 5,
       noise_mask: true,
       force_inpaint: true,
@@ -34,13 +34,14 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['18', 0],
-      model: ['28', 0],
-      clip: ['28', 1],
+      model: ['10', 0],
+      clip: ['10', 1],
       vae: ['10', 2],
-      positive: ['28', 2],
-      negative: ['28', 3],
+      positive: ['11', 0],
+      negative: ['12', 0],
       bbox_detector: ['20', 0],
-      sam_model_opt: ['6', 0]
+      sam_model_opt: ['6', 0],
+      segm_detector_opt: ['29', 1]
     },
     class_type: 'FaceDetailer',
     _meta: {
@@ -65,9 +66,9 @@ export const defaultWorkflowPrompt = {
       sampler_name: 'euler_ancestral',
       scheduler: 'simple',
       denoise: 1,
-      model: ['28', 0],
-      positive: ['28', 2],
-      negative: ['28', 3],
+      model: ['10', 0],
+      positive: ['11', 0],
+      negative: ['12', 0],
       latent_image: ['9', 0]
     },
     class_type: 'KSampler',
@@ -77,8 +78,8 @@ export const defaultWorkflowPrompt = {
   },
   '9': {
     inputs: {
-      width: ['28', 5],
-      height: ['28', 6],
+      width: 832,
+      height: 1216,
       batch_size: 1
     },
     class_type: 'EmptyLatentImage',
@@ -118,7 +119,7 @@ export const defaultWorkflowPrompt = {
   '14': {
     inputs: {
       upscale_method: 'nearest-exact',
-      scale_by: 2.0000000000000004,
+      scale_by: 2.0,
       samples: ['8', 0]
     },
     class_type: 'LatentUpscaleBy',
@@ -143,10 +144,10 @@ export const defaultWorkflowPrompt = {
       cfg: 5,
       sampler_name: 'euler_ancestral',
       scheduler: 'simple',
-      denoise: 0.4000000000000001,
-      model: ['28', 0],
-      positive: ['28', 2],
-      negative: ['28', 3],
+      denoise: 0.4,
+      model: ['10', 0],
+      positive: ['11', 0],
+      negative: ['12', 0],
       latent_image: ['14', 0]
     },
     class_type: 'KSampler',
@@ -177,13 +178,13 @@ export const defaultWorkflowPrompt = {
     inputs: {
       guide_size: 512,
       guide_size_for: true,
-      max_size: 1024,
+      max_size: 1536,
       seed: 781342677367830,
-      steps: 20,
-      cfg: 8,
+      steps: 15,
+      cfg: 4.5,
       sampler_name: 'euler_ancestral',
-      scheduler: 'simple',
-      denoise: 0.5,
+      scheduler: 'karras',
+      denoise: 0.4,
       feather: 5,
       noise_mask: true,
       force_inpaint: true,
@@ -204,13 +205,14 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['15', 0],
-      model: ['28', 0],
-      clip: ['28', 1],
+      model: ['10', 0],
+      clip: ['10', 1],
       vae: ['10', 2],
-      positive: ['28', 2],
-      negative: ['28', 3],
+      positive: ['11', 0],
+      negative: ['12', 0],
       bbox_detector: ['20', 0],
-      sam_model_opt: ['6', 0]
+      sam_model_opt: ['6', 0],
+      segm_detector_opt: ['29', 1]
     },
     class_type: 'FaceDetailer',
     _meta: {
@@ -235,6 +237,15 @@ export const defaultWorkflowPrompt = {
     class_type: 'WildcardDivide',
     _meta: {
       title: 'Wildcard Divide'
+    }
+  },
+  '29': {
+    inputs: {
+      model_name: 'segm/face_yolov8m-seg_60.pt'
+    },
+    class_type: 'UltralyticsDetectorProvider',
+    _meta: {
+      title: 'UltralyticsDetectorProvider'
     }
   }
 }

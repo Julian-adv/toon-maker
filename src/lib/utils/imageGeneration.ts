@@ -36,22 +36,29 @@ export interface GenerationOptions {
 }
 
 export async function generateImage(options: GenerationOptions): Promise<void> {
-  const { promptsData, settings, resolvedRandomValues, onLoadingChange, onProgressUpdate, onImageReceived, onError } =
-    options
+  const {
+    promptsData,
+    settings,
+    resolvedRandomValues,
+    onLoadingChange,
+    onProgressUpdate,
+    onImageReceived,
+    onError
+  } = options
 
   try {
     // Separate negative category from positive categories
-    const negativeCategory = promptsData.categories.find(cat => cat.id === 'negative')
-    const positiveCategories = promptsData.categories.filter(cat => cat.id !== 'negative')
+    const negativeCategory = promptsData.categories.find((cat) => cat.id === 'negative')
+    const positiveCategories = promptsData.categories.filter((cat) => cat.id !== 'negative')
 
     // Build the combined positive prompt from dynamic categories (using resolved random values)
     const promptValue = positiveCategories
-      .map(category => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
+      .map((category) => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
       .filter(Boolean)
       .join(', ')
 
     // Build the negative prompt
-    const negativePrompt = negativeCategory 
+    const negativePrompt = negativeCategory
       ? getEffectiveCategoryValueFromResolved(negativeCategory, resolvedRandomValues)
       : ''
 
@@ -72,6 +79,7 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     // Update workflow with prompts
     workflow['28'].inputs.wildcard_text = promptValue
     workflow['28'].inputs.populated_text = promptValue
+    workflow['11'].inputs.text = promptValue
     workflow['12'].inputs.text = negativePrompt
 
     // Configure workflow based on settings
@@ -133,22 +141,22 @@ function configureWorkflow(
 function applySeedsToWorkflow(workflow: ComfyUIWorkflow) {
   // Apply random seed to relevant nodes
   const seed = Math.floor(Math.random() * 10000000000000000)
-  
+
   // Set seed for WildcardDivide node
   workflow['28'].inputs.seed = seed
-  
+
   // Set seed for KSamplers
   workflow['8'].inputs.seed = seed
 
   if (workflow['17']) {
     workflow['17'].inputs.seed = seed + 1
   }
-  
+
   // Set seed for FaceDetailer nodes
   if (workflow['5']) {
     workflow['5'].inputs.seed = seed + 2
   }
-  
+
   if (workflow['22']) {
     workflow['22'].inputs.seed = seed + 3
   }
@@ -225,7 +233,13 @@ async function submitToComfyUI(
     onLoadingChange: callbacks.onLoadingChange,
     onProgressUpdate: callbacks.onProgressUpdate,
     onImageReceived: async (imageBlob: Blob) => {
-      const filePath = await saveImage(imageBlob, promptsData, settings.outputDirectory, workflow, resolvedRandomValues)
+      const filePath = await saveImage(
+        imageBlob,
+        promptsData,
+        settings.outputDirectory,
+        workflow,
+        resolvedRandomValues
+      )
       if (filePath) {
         callbacks.onImageReceived(imageBlob, filePath)
       } else {
