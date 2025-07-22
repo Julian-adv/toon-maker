@@ -124,8 +124,12 @@
       <label for={id}>
         {label}
         {#if aliasOf}
-          <span class="alias-indicator" title="This category is linked to another category">
-            ↗
+          {@const sourceCategory = allCategories.find((cat) => cat.id === aliasOf)}
+          <span
+            class="alias-indicator"
+            title="This category is linked to {sourceCategory?.name || aliasOf}"
+          >
+            → {sourceCategory?.name || aliasOf}
           </span>
         {/if}
       </label>
@@ -199,10 +203,10 @@
   <CategoryEditDialog
     show={showCategoryEditDialog}
     category={currentCategory}
-    allCategories={allCategories}
+    {allCategories}
     onClose={closeCategoryEditDialog}
-    onCategoryUpdate={onCategoryUpdate}
-    onCategoryDelete={onCategoryDelete}
+    {onCategoryUpdate}
+    {onCategoryDelete}
   />
 </div>
 
@@ -290,7 +294,7 @@
 
   .alias-indicator {
     color: #2196f3;
-    font-weight: bold;
+    font-weight: normal;
     margin-left: 0.25rem;
     font-size: 0.9em;
   }
@@ -325,5 +329,4 @@
   .drag-handle:active {
     cursor: grabbing;
   }
-
 </style>
