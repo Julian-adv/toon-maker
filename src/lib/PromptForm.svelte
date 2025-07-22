@@ -11,6 +11,7 @@
     updateFaceDetailer,
     addCategory,
     removeCategory,
+    updateCategory,
     reorderCategories,
     resolvedRandomValues
   } from './stores/promptsStore'
@@ -44,10 +45,12 @@
     addCategory(newCategory)
   }
 
-  function handleRemoveCategory(categoryId: string) {
-    if (confirm('Are you sure you want to remove this category?')) {
-      removeCategory(categoryId)
-    }
+  function handleCategoryUpdate(updatedCategory: PromptCategory) {
+    updateCategory(updatedCategory.id, updatedCategory)
+  }
+
+  function handleCategoryDelete(categoryId: string) {
+    removeCategory(categoryId)
   }
 
   // Drag and drop handlers
@@ -119,9 +122,10 @@
           options={category.values}
           onValueChange={handleCategoryValueChange(category.id)}
           onOptionsChange={handleCategoryOptionsChange(category.id)}
-          onDelete={() => handleRemoveCategory(category.id)}
           resolvedRandomValue={$resolvedRandomValues[category.id]}
           onDragStart={(e) => handleDragStart(e, index)}
+          onCategoryUpdate={handleCategoryUpdate}
+          onCategoryDelete={handleCategoryDelete}
         />
       </div>
     {/each}

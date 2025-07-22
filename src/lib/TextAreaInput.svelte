@@ -1,6 +1,7 @@
 <script lang="ts">
-  import type { OptionItem } from './types'
+  import type { OptionItem, PromptCategory } from './types'
   import OptionsEditDialog from './OptionsEditDialog.svelte'
+  import CategoryEditDialog from './CategoryEditDialog.svelte'
   import ComboBox from './ComboBox.svelte'
   import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
 
@@ -12,9 +13,10 @@
     options: OptionItem[]
     onValueChange: (value: OptionItem) => void
     onOptionsChange: (options: OptionItem[]) => void
-    onDelete: () => void
     resolvedRandomValue?: OptionItem
     onDragStart?: (event: DragEvent) => void
+    onCategoryUpdate: (updatedCategory: PromptCategory) => void
+    onCategoryDelete: (categoryId: string) => void
   }
 
   let {
@@ -25,12 +27,14 @@
     options,
     onValueChange,
     onOptionsChange,
-    onDelete,
     resolvedRandomValue,
-    onDragStart
+    onDragStart,
+    onCategoryUpdate,
+    onCategoryDelete
   }: Props = $props()
 
   let showEditDialog = $state(false)
+  let showCategoryEditDialog = $state(false)
   let textareaValue = $state(value.value)
 
   // Add random option to the options array
@@ -59,6 +63,10 @@
     showEditDialog = true
   }
 
+  function openCategoryEditDialog() {
+    showCategoryEditDialog = true
+  }
+
   // Get the appropriate value to pass to OptionsEditDialog
   let dialogValue = $derived.by(() => {
     if (value.title === '[Random]' && resolvedRandomValue) {
@@ -70,6 +78,18 @@
   function closeEditDialog() {
     showEditDialog = false
   }
+
+  function closeCategoryEditDialog() {
+    showCategoryEditDialog = false
+  }
+
+  // Create category object for the CategoryEditDialog
+  let currentCategory = $derived({
+    id,
+    name: label,
+    values: options,
+    currentValue: value
+  })
 </script>
 
 <div class="input-group">
@@ -96,17 +116,24 @@
     </div>
     <button
       type="button"
-      class="delete-button"
-      onclick={onDelete}
-      title="Remove category"
-      aria-label="Remove category"
+      class="category-edit-button"
+      onclick={openCategoryEditDialog}
+      title="Edit category name"
+      aria-label="Edit category name"
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <polyline points="3,6 5,6 21,6"></polyline>
-        <path d="M19,6V20a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6M8,6V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2V6"
-        ></path>
-        <line x1="10" y1="11" x2="10" y2="17"></line>
-        <line x1="14" y1="11" x2="14" y2="17"></line>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path
+          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </button>
   </div>
@@ -151,6 +178,14 @@
     onClose={closeEditDialog}
     {onOptionsChange}
     {onValueChange}
+  />
+
+  <CategoryEditDialog
+    show={showCategoryEditDialog}
+    category={currentCategory}
+    onClose={closeCategoryEditDialog}
+    onCategoryUpdate={onCategoryUpdate}
+    onCategoryDelete={onCategoryDelete}
   />
 </div>
 
@@ -210,6 +245,32 @@
     transition: background-color 0.2s ease;
   }
 
+  .category-edit-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .category-edit-button:hover {
+    background: #e9ecef;
+    border-color: #ccc;
+    color: #495057;
+  }
+
+  .category-edit-button:active {
+    transform: scale(0.95);
+  }
+
   .label-container:active {
     cursor: grabbing;
   }
@@ -241,29 +302,4 @@
     cursor: grabbing;
   }
 
-  .delete-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    background: #fee;
-    border: 1px solid #fcc;
-    border-radius: 4px;
-    color: #c33;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-  }
-
-  .delete-button:hover {
-    background: #fcc;
-    border-color: #faa;
-    color: #a11;
-  }
-
-  .delete-button:active {
-    transform: scale(0.95);
-  }
 </style>
