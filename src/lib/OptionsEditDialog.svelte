@@ -1,6 +1,6 @@
-<!-- Dialog component for editing options list -->
+<!-- Dialog component for editing options list and category settings -->
 <script lang="ts">
-  import type { OptionItem } from './types'
+  import type { OptionItem, PromptCategory } from './types'
   import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
   import { savePromptsData } from './stores/promptsStore'
   interface Props {
@@ -11,9 +11,26 @@
     onClose: () => void
     onOptionsChange: (options: OptionItem[]) => void
     onValueChange: (value: OptionItem) => void
+    // Category management props
+    category: PromptCategory
+    allCategories: PromptCategory[]
+    onCategoryUpdate: (updatedCategory: PromptCategory) => void
+    onCategoryDelete: (categoryId: string) => void
   }
 
-  let { show, label, options, value, onClose, onOptionsChange, onValueChange }: Props = $props()
+  let {
+    show,
+    label,
+    options,
+    value,
+    onClose,
+    onOptionsChange,
+    onValueChange,
+    category,
+    allCategories,
+    onCategoryUpdate,
+    onCategoryDelete
+  }: Props = $props()
 
   let selectedOption = $state<OptionItem>(value)
   let newOptionTitle = $state('')
@@ -22,6 +39,11 @@
   let draggedIndex = $state<number | null>(null)
   let dragOverIndex = $state<number | null>(null)
 
+  // Category management state
+  let editedCategoryName = $state('')
+  let selectedAliasId = $state('')
+  let isLinkedToCategory = $derived(!!selectedAliasId)
+
   // Update form values when dialog opens
   $effect(() => {
     if (show) {
@@ -29,12 +51,23 @@
       newOptionTitle = ''
       newOptionValue = value.value || ''
 
+      // Initialize category form values
+      editedCategoryName = category.name
+      selectedAliasId = category.aliasOf || ''
+
       // Scroll to selected option after dialog opens
       setTimeout(() => {
         scrollToSelectedOption()
       }, 100)
     }
   })
+
+  // Get available categories for aliasing (excluding self and existing aliases)
+  let availableCategories = $derived(
+    allCategories.filter(
+      (cat) => cat.id !== category.id && !cat.aliasOf // Exclude self and categories that are already aliases
+    )
+  )
 
   function scrollToSelectedOption() {
     if (!optionsListElement || !selectedOption.title) return
@@ -137,6 +170,19 @@
       handleUpdateOption()
     }
 
+    // Save category changes if there are any
+    const trimmedName = editedCategoryName.trim()
+    const hasChanges = trimmedName !== category.name || selectedAliasId !== (category.aliasOf || '')
+
+    if (hasChanges && trimmedName) {
+      const updatedCategory: PromptCategory = {
+        ...category,
+        name: trimmedName,
+        aliasOf: selectedAliasId || undefined
+      }
+      onCategoryUpdate(updatedCategory)
+    }
+
     onValueChange(selectedOption)
 
     // Save to prompts.json
@@ -149,6 +195,17 @@
     }
 
     onClose()
+  }
+
+  function handleDeleteCategory() {
+    if (
+      confirm(
+        `Are you sure you want to delete the "${category.name}" category? This action cannot be undone.`
+      )
+    ) {
+      onCategoryDelete(category.id)
+      onClose()
+    }
   }
 
   // Drag and drop handlers
@@ -237,7 +294,7 @@
       tabindex="-1"
     >
       <div class="dialog-header">
-        <h3>Edit {label} Option</h3>
+        <h3>{label}</h3>
         <button type="button" class="close-button" onclick={onClose} aria-label="Close dialog">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <line x1="18" y1="6" x2="6" y2="18" stroke-width="2" stroke-linecap="round" />
@@ -247,9 +304,33 @@
       </div>
       <div class="dialog-body">
         <div class="grid-container">
+          <label for="category-name" class="category-name-label">Category Name:</label>
+          <input
+            id="category-name"
+            class="category-name-input"
+            type="text"
+            bind:value={editedCategoryName}
+            placeholder="Enter category name"
+          />
+
+          <label for="alias-select" class="alias-label">Link to Category:</label>
+          <select id="alias-select" class="alias-select" bind:value={selectedAliasId}>
+            <option value="">None - Use own options</option>
+            {#each availableCategories as cat (cat.id)}
+              <option value={cat.id}>{cat.name}</option>
+            {/each}
+          </select>
+
+          <!-- Options Header -->
+          <div class="options-header">Options</div>
+
+          <!-- Value Header -->
+          <div class="value-header">Value</div>
+
           <!-- Options List -->
           <div
             class="options-list"
+            class:disabled={isLinkedToCategory}
             bind:this={optionsListElement}
             ondragover={handleContainerDragOver}
             ondragleave={handleContainerDragLeave}
@@ -281,7 +362,7 @@
             <button
               class="delete-option-btn"
               onclick={handleDeleteOption}
-              disabled={!selectedOption.title || options.length === 0}
+              disabled={!selectedOption.title || options.length === 0 || isLinkedToCategory}
               aria-label="Delete option"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -296,7 +377,7 @@
           </div>
 
           <!-- Option Value Textarea -->
-          <div class="textarea-area">
+          <div class="textarea-area" class:disabled={isLinkedToCategory}>
             <AutoCompleteTextarea
               id="option-value"
               bind:value={newOptionValue}
@@ -306,7 +387,7 @@
           </div>
 
           <!-- Left Controls -->
-          <div class="left-controls">
+          <div class="left-controls" class:disabled={isLinkedToCategory}>
             <AutoCompleteTextarea
               id="new-option-title"
               bind:value={newOptionTitle}
@@ -316,7 +397,7 @@
             <button
               class="add-option-btn"
               onclick={handleAddNewOption}
-              disabled={!newOptionTitle.trim()}
+              disabled={!newOptionTitle.trim() || isLinkedToCategory}
             >
               Add
             </button>
@@ -324,6 +405,9 @@
         </div>
       </div>
       <div class="dialog-footer">
+        <button type="button" class="delete-category-btn" onclick={handleDeleteCategory}>
+          Delete
+        </button>
         <div class="dialog-actions">
           <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
           <button type="button" class="dialog-save-btn" onclick={handleSave}> Save </button>
@@ -401,7 +485,8 @@
 
   .dialog-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     padding: 1rem;
     border-top: 1px solid #eee;
   }
@@ -423,11 +508,14 @@
 
   .grid-container {
     display: grid;
-    grid-template-columns: 1fr 2fr;
-    grid-template-rows: 1fr auto auto;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto auto auto 1fr auto auto;
     gap: 1rem;
     height: 100%;
     grid-template-areas:
+      'category-name-label category-name-input'
+      'alias-label alias-select'
+      'options-header value-header'
       'options-list selected-header'
       'options-list textarea'
       'left-controls .';
@@ -439,6 +527,17 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     max-height: 350px;
+  }
+
+  .options-list.disabled {
+    background-color: #f0f0f0;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .textarea-area.disabled {
+    pointer-events: none;
+    opacity: 0.6;
   }
 
   .option-item {
@@ -580,6 +679,11 @@
     align-items: center;
   }
 
+  .left-controls.disabled {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
   .dialog-actions {
     display: flex;
     gap: 0.5rem;
@@ -598,5 +702,94 @@
 
   .dialog-save-btn:hover {
     background: #1976d2;
+  }
+
+  .category-name-label {
+    grid-area: category-name-label;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.875rem;
+    align-self: center;
+    text-align: right;
+  }
+
+  .category-name-input {
+    grid-area: category-name-input;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background: white;
+  }
+
+  .category-name-input:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+  }
+
+  .alias-label {
+    grid-area: alias-label;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.875rem;
+    align-self: center;
+    text-align: right;
+  }
+
+  .alias-select {
+    grid-area: alias-select;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background: white;
+  }
+
+  .alias-select:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+  }
+
+  .delete-category-btn {
+    padding: 0.5rem 1rem;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+
+  .delete-category-btn:hover {
+    background: #c82333;
+  }
+
+  .delete-category-btn:active {
+    transform: scale(0.98);
+  }
+
+  .options-header {
+    grid-area: options-header;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.875rem;
+    align-self: end;
+    text-align: left;
+    margin-top: 0.25rem;
+  }
+
+  .value-header {
+    grid-area: value-header;
+    font-weight: 500;
+    color: #555;
+    font-size: 0.875rem;
+    align-self: end;
+    text-align: left;
+    margin-top: 0.25rem;
   }
 </style>
