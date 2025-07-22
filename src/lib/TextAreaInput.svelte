@@ -4,6 +4,7 @@
   import CategoryEditDialog from './CategoryEditDialog.svelte'
   import ComboBox from './ComboBox.svelte'
   import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
+  import { getEffectiveOptions } from './stores/promptsStore'
 
   interface Props {
     id: string
@@ -17,6 +18,8 @@
     onDragStart?: (event: DragEvent) => void
     onCategoryUpdate: (updatedCategory: PromptCategory) => void
     onCategoryDelete: (categoryId: string) => void
+    allCategories: PromptCategory[]
+    aliasOf?: string
   }
 
   let {
@@ -30,15 +33,29 @@
     resolvedRandomValue,
     onDragStart,
     onCategoryUpdate,
-    onCategoryDelete
+    onCategoryDelete,
+    allCategories,
+    aliasOf
   }: Props = $props()
 
   let showEditDialog = $state(false)
   let showCategoryEditDialog = $state(false)
   let textareaValue = $state(value.value)
 
-  // Add random option to the options array
-  let optionsWithRandom = $derived([{ title: '[Random]', value: '[Random]' }, ...options])
+  // Create category object for the CategoryEditDialog
+  let currentCategory = $derived({
+    id,
+    name: label,
+    values: options,
+    currentValue: value,
+    aliasOf
+  })
+
+  // Get effective options (handles alias categories)
+  let effectiveOptions = $derived(getEffectiveOptions(currentCategory, allCategories))
+
+  // Add random option to the effective options array
+  let optionsWithRandom = $derived([{ title: '[Random]', value: '[Random]' }, ...effectiveOptions])
 
   // Sync textareaValue with value.value when value changes
   $effect(() => {
@@ -82,14 +99,6 @@
   function closeCategoryEditDialog() {
     showCategoryEditDialog = false
   }
-
-  // Create category object for the CategoryEditDialog
-  let currentCategory = $derived({
-    id,
-    name: label,
-    values: options,
-    currentValue: value
-  })
 </script>
 
 <div class="input-group">
@@ -112,7 +121,14 @@
           <circle cx="15" cy="19" r="1" />
         </svg>
       </div>
-      <label for={id}>{label}</label>
+      <label for={id}>
+        {label}
+        {#if aliasOf}
+          <span class="alias-indicator" title="This category is linked to another category">
+            ↗
+          </span>
+        {/if}
+      </label>
     </div>
     <button
       type="button"
@@ -173,7 +189,7 @@
   <OptionsEditDialog
     show={showEditDialog}
     {label}
-    {options}
+    options={effectiveOptions}
     value={dialogValue}
     onClose={closeEditDialog}
     {onOptionsChange}
@@ -183,6 +199,7 @@
   <CategoryEditDialog
     show={showCategoryEditDialog}
     category={currentCategory}
+    allCategories={allCategories}
     onClose={closeCategoryEditDialog}
     onCategoryUpdate={onCategoryUpdate}
     onCategoryDelete={onCategoryDelete}
@@ -269,6 +286,13 @@
 
   .category-edit-button:active {
     transform: scale(0.95);
+  }
+
+  .alias-indicator {
+    color: #2196f3;
+    font-weight: bold;
+    margin-left: 0.25rem;
+    font-size: 0.9em;
   }
 
   .label-container:active {

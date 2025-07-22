@@ -110,9 +110,10 @@ export function getRandomOption(categoryId: string): OptionItem | null {
   let randomOption: OptionItem | null = null
   promptsData.subscribe(data => {
     const category = data.categories.find(cat => cat.id === categoryId)
-    if (category && category.values.length > 0) {
+    if (category) {
+      const effectiveOptions = getEffectiveOptions(category, data.categories)
       // Filter out the random option itself to avoid infinite loop
-      const realOptions = category.values.filter(option => option.title !== '[Random]')
+      const realOptions = effectiveOptions.filter(option => option.title !== '[Random]')
       if (realOptions.length > 0) {
         const randomIndex = Math.floor(Math.random() * realOptions.length)
         randomOption = realOptions[randomIndex]
@@ -120,6 +121,26 @@ export function getRandomOption(categoryId: string): OptionItem | null {
     }
   })()
   return randomOption
+}
+
+// Get the source category (following alias chain)
+export function getSourceCategory(categoryId: string, allCategories: PromptCategory[]): PromptCategory | null {
+  const category = allCategories.find(cat => cat.id === categoryId)
+  if (!category) return null
+  
+  if (category.aliasOf) {
+    return getSourceCategory(category.aliasOf, allCategories)
+  }
+  return category
+}
+
+// Get effective options for a category (from source if alias)
+export function getEffectiveOptions(category: PromptCategory, allCategories: PromptCategory[]): OptionItem[] {
+  if (category.aliasOf) {
+    const sourceCategory = getSourceCategory(category.aliasOf, allCategories)
+    return sourceCategory ? sourceCategory.values : []
+  }
+  return category.values
 }
 
 // Get effective value using already resolved random values

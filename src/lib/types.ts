@@ -20,6 +20,7 @@ export interface PromptCategory {
   name: string
   values: OptionItem[]
   currentValue: OptionItem
+  aliasOf?: string // ID of the category this one is an alias of
 }
 
 export interface PromptsData {

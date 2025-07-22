@@ -5,28 +5,41 @@
   interface Props {
     show: boolean
     category: PromptCategory
+    allCategories: PromptCategory[]
     onClose: () => void
     onCategoryUpdate: (updatedCategory: PromptCategory) => void
     onCategoryDelete: (categoryId: string) => void
   }
 
-  let { show, category, onClose, onCategoryUpdate, onCategoryDelete }: Props = $props()
+  let { show, category, allCategories, onClose, onCategoryUpdate, onCategoryDelete }: Props = $props()
 
   let editedName = $state('')
+  let selectedAliasId = $state('')
 
   // Update form values when dialog opens
   $effect(() => {
     if (show) {
       editedName = category.name
+      selectedAliasId = category.aliasOf || ''
     }
   })
 
+  // Get available categories for aliasing (excluding self and existing aliases)
+  let availableCategories = $derived(
+    allCategories.filter(cat => 
+      cat.id !== category.id && !cat.aliasOf // Exclude self and categories that are already aliases
+    )
+  )
+
   function handleSave() {
     const trimmedName = editedName.trim()
-    if (trimmedName && trimmedName !== category.name) {
+    const hasChanges = trimmedName !== category.name || selectedAliasId !== (category.aliasOf || '')
+    
+    if (hasChanges && trimmedName) {
       const updatedCategory: PromptCategory = {
         ...category,
-        name: trimmedName
+        name: trimmedName,
+        aliasOf: selectedAliasId || undefined
       }
       onCategoryUpdate(updatedCategory)
     }
@@ -89,32 +102,45 @@
           />
         </div>
 
-        <div class="danger-zone">
-          <h4>Danger Zone</h4>
-          <p>Deleting a category will permanently remove it and all its options.</p>
-          <button
-            type="button"
-            class="delete-category-btn"
-            onclick={handleDelete}
+        <div class="form-field">
+          <label for="alias-select">Link to Category (Optional):</label>
+          <select
+            id="alias-select"
+            bind:value={selectedAliasId}
           >
-            Delete Category
-          </button>
+            <option value="">None - Use own options</option>
+            {#each availableCategories as cat (cat.id)}
+              <option value={cat.id}>{cat.name}</option>
+            {/each}
+          </select>
+          <p class="form-help">
+            Link this category to another category to share its options. This category will act as an alias.
+          </p>
         </div>
       </div>
 
       <div class="dialog-footer">
         <div class="dialog-actions">
-          <button type="button" class="dialog-cancel-btn" onclick={onClose}>
-            Cancel
-          </button>
-          <button 
-            type="button" 
-            class="dialog-save-btn" 
-            onclick={handleSave}
-            disabled={!editedName.trim() || editedName.trim() === category.name}
+          <button
+            type="button"
+            class="delete-category-btn"
+            onclick={handleDelete}
           >
-            Save
+            Delete
           </button>
+          <div class="right-actions">
+            <button type="button" class="dialog-cancel-btn" onclick={onClose}>
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              class="dialog-save-btn" 
+              onclick={handleSave}
+              disabled={!editedName.trim() || (editedName.trim() === category.name && selectedAliasId === (category.aliasOf || ''))}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -212,23 +238,26 @@
     box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
   }
 
-  .danger-zone {
-    border: 1px solid #fee;
+  .form-field select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
     border-radius: 4px;
-    padding: 1rem;
-    background: #fef9f9;
+    font-size: 16px;
+    box-sizing: border-box;
+    background: white;
   }
 
-  .danger-zone h4 {
-    margin: 0 0 0.5rem 0;
-    color: #c33;
-    font-size: 1rem;
+  .form-field select:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
   }
 
-  .danger-zone p {
-    margin: 0 0 1rem 0;
-    color: #666;
+  .form-help {
+    margin: 0.5rem 0 0 0;
     font-size: 0.875rem;
+    color: #666;
     line-height: 1.4;
   }
 
@@ -259,6 +288,13 @@
   }
 
   .dialog-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .right-actions {
     display: flex;
     gap: 0.5rem;
   }

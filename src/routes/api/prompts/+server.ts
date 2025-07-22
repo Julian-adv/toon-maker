@@ -17,12 +17,37 @@ async function ensureDir() {
   }
 }
 
+// Clean category data to remove unnecessary fields
+function cleanCategoryData(category: PromptCategory): PromptCategory {
+  const cleaned: PromptCategory = {
+    id: category.id,
+    name: category.name,
+    values: category.aliasOf ? [] : category.values, // Empty array if it's an alias
+    currentValue: category.currentValue
+  }
+  
+  // Include aliasOf if it exists
+  if (category.aliasOf) {
+    cleaned.aliasOf = category.aliasOf
+  }
+  
+  return cleaned
+}
+
 export async function POST({ request }) {
   await ensureDir()
   const data: PromptsData = await request.json()
 
   try {
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2))
+    // Clean the data to remove unnecessary fields like placeholder, rows, etc.
+    const cleanedData: PromptsData = {
+      categories: data.categories.map(cleanCategoryData),
+      selectedCheckpoint: data.selectedCheckpoint,
+      useUpscale: data.useUpscale,
+      useFaceDetailer: data.useFaceDetailer
+    }
+    
+    await fs.writeFile(filePath, JSON.stringify(cleanedData, null, 2))
     return json({ success: true })
   } catch (error) {
     console.error('Error writing to file:', error)

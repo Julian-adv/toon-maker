@@ -126,6 +126,8 @@
           onDragStart={(e) => handleDragStart(e, index)}
           onCategoryUpdate={handleCategoryUpdate}
           onCategoryDelete={handleCategoryDelete}
+          allCategories={$promptsData.categories}
+          aliasOf={category.aliasOf}
         />
       </div>
     {/each}
