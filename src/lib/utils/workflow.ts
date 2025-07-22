@@ -5,9 +5,9 @@ export const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our d
 export const defaultWorkflowPrompt = {
   '5': {
     inputs: {
-      guide_size: 512,
+      guide_size: 832,
       guide_size_for: true,
-      max_size: 1536,
+      max_size: 1216,
       seed: 836267740683999,
       steps: 15,
       cfg: 4.5,
@@ -34,11 +34,11 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['18', 0],
-      model: ['10', 0],
-      clip: ['10', 1],
+      model: ['28', 0],
+      clip: ['28', 1],
       vae: ['10', 2],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       bbox_detector: ['20', 0],
       sam_model_opt: ['6', 0],
       segm_detector_opt: ['29', 1]
@@ -67,8 +67,8 @@ export const defaultWorkflowPrompt = {
       scheduler: 'simple',
       denoise: 1,
       model: ['10', 0],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       latent_image: ['9', 0]
     },
     class_type: 'KSampler',
@@ -78,8 +78,8 @@ export const defaultWorkflowPrompt = {
   },
   '9': {
     inputs: {
-      width: 832,
-      height: 1216,
+      width: ['28', 5],
+      height: ['28', 6],
       batch_size: 1
     },
     class_type: 'EmptyLatentImage',
@@ -146,8 +146,8 @@ export const defaultWorkflowPrompt = {
       scheduler: 'simple',
       denoise: 0.4,
       model: ['10', 0],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       latent_image: ['14', 0]
     },
     class_type: 'KSampler',
@@ -205,11 +205,11 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['15', 0],
-      model: ['10', 0],
-      clip: ['10', 1],
+      model: ['28', 0],
+      clip: ['28', 1],
       vae: ['10', 2],
-      positive: ['11', 0],
-      negative: ['12', 0],
+      positive: ['28', 2],
+      negative: ['28', 3],
       bbox_detector: ['20', 0],
       sam_model_opt: ['6', 0],
       segm_detector_opt: ['29', 1]
@@ -223,13 +223,13 @@ export const defaultWorkflowPrompt = {
     inputs: {
       wildcard_text: '',
       populated_text: '',
-      mode: true,
+      mode: false,
       'Select to add LoRA': 'Select the LoRA to add to the text',
       'Select to add Wildcard': 'Select the Wildcard to add to the text',
       width: 832,
       height: 1216,
       seed: 566998447548836,
-      overall: true,
+      overall: false,
       model: ['10', 0],
       clip: ['10', 1],
       negative: ['12', 0]
