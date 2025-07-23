@@ -6,7 +6,7 @@ import { saveImage } from './fileIO'
 import { connectWebSocket, type WebSocketCallbacks } from './comfyui'
 import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
 import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
-import type { PromptsData, Settings, ProgressData, OptionItem } from '$lib/types'
+import type { PromptsData, Settings, ProgressData, OptionItem, PromptCategory } from '$lib/types'
 
 // Workflow node interfaces
 interface WorkflowNodeInput {
@@ -33,6 +33,7 @@ export interface GenerationOptions {
   onProgressUpdate: (progress: ProgressData) => void
   onImageReceived: (imageBlob: Blob, filePath: string) => void
   onError: (error: string) => void
+  onCategoriesDisabled?: (excludedCategories: PromptCategory[]) => void
 }
 
 export async function generateImage(options: GenerationOptions): Promise<void> {
@@ -43,7 +44,8 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     onLoadingChange,
     onProgressUpdate,
     onImageReceived,
-    onError
+    onError,
+    onCategoriesDisabled
   } = options
 
   try {
@@ -52,15 +54,11 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     const positiveCategories = promptsData.categories.filter((cat) => cat.id !== 'negative')
 
     // Build the combined positive prompt from dynamic categories (using resolved random values)
-    // First pass: calculate values for all categories once to avoid random value changes
-    const categoryValues = positiveCategories
-      .map((category) => ({
-        category,
-        value: getEffectiveCategoryValueFromResolved(category, resolvedRandomValues)
-      }))
-      .filter((item) => item.value)
-
-    const firstPassPromptValue = categoryValues.map((item) => item.value).join(', ')
+    // First pass: build initial prompt value
+    const firstPassPromptValue = positiveCategories
+      .map((category) => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
+      .filter(Boolean)
+      .join(', ')
 
     // Second pass: remove categories that match -[category] patterns
     let promptValue = firstPassPromptValue
@@ -76,33 +74,47 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
 
     // Remove values from matching categories
     if (categoriesToRemove.length > 0) {
-      const filteredCategoryValues = categoryValues.filter((item) => {
-        const categoryName = item.category.name.toLowerCase()
+      const filteredCategories: PromptCategory[] = []
+      const excludedCategories: PromptCategory[] = []
+
+      // Single loop to categorize all categories
+      positiveCategories.forEach((category) => {
+        const categoryName = category.name.toLowerCase()
+        let isExcluded = false
 
         // Check if category name matches directly
         if (categoriesToRemove.includes(categoryName)) {
-          return false
+          isExcluded = true
         }
-
         // Check if this category is an alias of a category to remove
-        if (item.category.aliasOf) {
-          const aliasTarget = positiveCategories.find((cat) => cat.id === item.category.aliasOf)
+        else if (category.aliasOf) {
+          const aliasTarget = positiveCategories.find((cat) => cat.id === category.aliasOf)
           if (aliasTarget && categoriesToRemove.includes(aliasTarget.name.toLowerCase())) {
-            return false
+            isExcluded = true
           }
         }
 
-        return true
+        if (isExcluded) {
+          excludedCategories.push(category)
+        } else {
+          filteredCategories.push(category)
+        }
       })
 
+      // Notify about excluded categories for UI feedback
+      if (excludedCategories.length > 0 && onCategoriesDisabled) {
+        onCategoriesDisabled(excludedCategories)
+      }
+
       console.log(
-        'filteredCategoryValues:\n' +
-          filteredCategoryValues.map((item) => `  ${item.category.name}: ${item.value}`).join('\n')
+        'filteredCategories:\n' +
+          filteredCategories.map((cat) => `  ${cat.name}: ${getEffectiveCategoryValueFromResolved(cat, resolvedRandomValues)}`).join('\n')
       )
 
-      // Rebuild prompt without the excluded categories using pre-calculated values
-      promptValue = filteredCategoryValues
-        .map((item) => item.value)
+      // Rebuild prompt without the excluded categories
+      promptValue = filteredCategories
+        .map((category) => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
+        .filter(Boolean)
         .join(', ')
         .replace(categoryRemovalPattern, '') // Remove any remaining -[category] patterns
         .trim()

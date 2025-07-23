@@ -29,6 +29,7 @@
   let imageViewer: { updateFileList: () => Promise<void> } | undefined
   let isGeneratingForever = $state(false)
   let shouldStopGeneration = $state(false)
+  let disabledCategoryIds = $state<Set<string>>(new Set())
 
   // Settings state
   let settings: Settings = $state({
@@ -69,6 +70,9 @@
 
   // Event handlers
   async function handleGenerate() {
+    // Clear previous disabled categories before new generation
+    disabledCategoryIds = new Set()
+
     // Add current values to options if they're not already there
     autoSaveCurrentValues()
 
@@ -109,6 +113,10 @@
       onError: (error) => {
         console.error('Generation error:', error)
         isLoading = false
+      },
+      onCategoriesDisabled: (excludedCategories) => {
+        // Update disabled categories set for visual feedback
+        disabledCategoryIds = new Set(excludedCategories.map(cat => cat.id))
       }
     })
   }
@@ -180,7 +188,7 @@
 <main class="prompt-input">
   <div class="content-grid">
     <section class="form-section">
-      <PromptForm {availableCheckpoints} />
+      <PromptForm {availableCheckpoints} {disabledCategoryIds} />
 
       <GenerationControls
         {isLoading}

@@ -19,9 +19,10 @@
 
   interface Props {
     availableCheckpoints: string[]
+    disabledCategoryIds: Set<string>
   }
 
-  let { availableCheckpoints }: Props = $props()
+  let { availableCheckpoints, disabledCategoryIds }: Props = $props()
 
   // Dynamic category update functions
   function handleCategoryValueChange(categoryId: string) {
@@ -128,6 +129,7 @@
           onCategoryDelete={handleCategoryDelete}
           allCategories={$promptsData.categories}
           aliasOf={category.aliasOf}
+          isDisabled={disabledCategoryIds.has(category.id)}
         />
       </div>
     {/each}

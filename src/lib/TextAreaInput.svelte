@@ -19,6 +19,7 @@
     onCategoryDelete: (categoryId: string) => void
     allCategories: PromptCategory[]
     aliasOf?: string
+    isDisabled?: boolean
   }
 
   let {
@@ -34,7 +35,8 @@
     onCategoryUpdate,
     onCategoryDelete,
     allCategories,
-    aliasOf
+    aliasOf,
+    isDisabled = false
   }: Props = $props()
 
   let showEditDialog = $state(false)
@@ -91,7 +93,7 @@
   }
 </script>
 
-<div class="input-group">
+<div class="input-group" class:disabled={isDisabled}>
   <div
     class="label-container"
     draggable="true"
@@ -148,13 +150,19 @@
     </button>
   </div>
   <ComboBox bind:value options={optionsWithRandom} placeholder="Enter title..." {onValueChange} />
-  <AutoCompleteTextarea
-    {id}
-    value={textareaValue}
-    {placeholder}
-    onValueChange={handleTextareaValueChange}
-    readonly={value.title === '[Random]'}
-  />
+  {#if isDisabled}
+    <div class="disabled-message">
+      <span class="disabled-text">Excluded by -[{label.toLowerCase()}] pattern</span>
+    </div>
+  {:else}
+    <AutoCompleteTextarea
+      {id}
+      value={textareaValue}
+      {placeholder}
+      onValueChange={handleTextareaValueChange}
+      readonly={value.title === '[Random]'}
+    />
+  {/if}
 
   <OptionsEditDialog
     show={showEditDialog}
@@ -259,5 +267,46 @@
 
   .drag-handle:active {
     cursor: grabbing;
+  }
+
+  .input-group.disabled {
+    background-color: #ffebee;
+    border-radius: 6px;
+    padding: 4px;
+    border: 2px solid #ffcdd2;
+    opacity: 0.8;
+  }
+
+  .input-group.disabled .label-container {
+    opacity: 0.7;
+  }
+
+  .input-group.disabled :global(.textarea-container) {
+    background-color: #fce4ec;
+  }
+
+  .input-group.disabled :global(.textarea) {
+    background-color: #fce4ec !important;
+    color: #d32f2f !important;
+  }
+
+  .disabled-message {
+    display: block;
+    width: 100%;
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-size: 13px;
+    box-sizing: border-box;
+    background-color: #f5f5f5;
+    color: #666;
+    cursor: not-allowed;
+    min-height: 1.5em;
+    line-height: 1.5em;
+    text-align: left;
+  }
+
+  .disabled-text {
+    font-style: italic;
   }
 </style>

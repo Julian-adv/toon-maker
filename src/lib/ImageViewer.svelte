@@ -83,6 +83,7 @@
     await updateFileList()
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function loadImageMetadata(filePath: string) {
     try {
       const metadata = (await getImageMetadata(filePath)) as { parameters?: string }
