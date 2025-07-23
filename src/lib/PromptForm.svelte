@@ -190,24 +190,24 @@
   .form-section {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.2rem;
     overflow-y: auto;
-    max-height: calc(100vh - 345px);
-    padding-right: 8px;
+    max-height: calc(100vh - 300px);
+    padding-right: 4px;
   }
 
   .form-section::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   .form-section::-webkit-scrollbar-track {
     background: #f1f1f1;
-    border-radius: 3px;
+    border-radius: 2px;
   }
 
   .form-section::-webkit-scrollbar-thumb {
     background: #c1c1c1;
-    border-radius: 3px;
+    border-radius: 2px;
   }
 
   .form-section::-webkit-scrollbar-thumb:hover {
@@ -222,17 +222,17 @@
 
   .field label {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 14px;
     color: #000;
     text-align: left;
   }
 
   .field select {
     width: 100%;
-    padding: 5px 10px;
+    padding: 4px;
     border-radius: 4px;
     border: 1px solid #ddd;
-    font-size: 14px;
+    font-size: 13px;
     background-color: #fff;
     box-sizing: border-box;
     transition: border-color 0.2s ease;
@@ -251,7 +251,7 @@
     gap: 0.5rem;
     cursor: pointer;
     font-weight: normal;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .checkbox-label input[type='checkbox'] {
@@ -268,17 +268,18 @@
 
   .category-header h3 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1rem;
     color: #333;
   }
 
   .btn-add-category {
-    padding: 0.5rem 1rem;
+    padding: 0.25rem 0.5rem;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
     transition: background 0.2s ease;
   }
 

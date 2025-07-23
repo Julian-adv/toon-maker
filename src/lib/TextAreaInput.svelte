@@ -175,13 +175,13 @@
   .input-group {
     display: flex;
     flex-direction: column;
-    gap: 5px; /* Spacing between label and textarea */
+    gap: 0.2rem; /* Spacing between label and textarea */
     width: 100%;
   }
 
   label {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 14px;
     text-align: left;
   }
 
@@ -191,8 +191,8 @@
     gap: 8px;
     justify-content: space-between;
     cursor: grab;
-    padding: 4px;
-    margin: -4px;
+    padding: 0px;
+    margin: 0px;
     border-radius: 4px;
     transition: background-color 0.2s ease;
   }

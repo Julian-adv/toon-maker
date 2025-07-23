@@ -177,7 +177,7 @@
   }
 
   .image-counter {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: #666;
     font-weight: 500;
     min-width: 60px;
@@ -196,8 +196,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: 50%;
     background: #f5f5f5;

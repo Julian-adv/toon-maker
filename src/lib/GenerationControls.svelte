@@ -117,15 +117,15 @@
   }
 
   .generate-btn {
-    padding: 0.75rem 1.5rem;
+    padding: 0.375rem 0.75rem;
     color: white;
     border: none;
     border-radius: 6px;
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 160px;
+    height: 36px;
   }
 
   .generate-btn:hover:not(:disabled) {
@@ -149,14 +149,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem;
+    padding: 0.375rem;
     border-radius: 6px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
   }
 
   .generate-forever-btn:hover:not(:disabled) {
@@ -179,15 +179,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem;
+    padding: 0.375rem;
     background: #f5f5f5;
     border: 1px solid #ddd;
     border-radius: 6px;
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
   }
 
   .settings-btn:hover:not(:disabled) {

@@ -275,10 +275,10 @@
   .textarea {
     display: block;
     width: 100%;
-    padding: 10px;
+    padding: 4px;
     border-radius: 4px;
     border: 1px solid #ddd;
-    font-size: 14px;
+    font-size: 13px;
     resize: vertical;
     box-sizing: border-box;
     background-color: #fff;

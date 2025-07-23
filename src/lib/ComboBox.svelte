@@ -10,7 +10,13 @@
     onOptionSelected?: (value: OptionItem) => void
   }
 
-  let { value = $bindable(), options, placeholder = "Enter value...", onValueChange, onOptionSelected }: Props = $props()
+  let {
+    value = $bindable(),
+    options,
+    placeholder = 'Enter value...',
+    onValueChange,
+    onOptionSelected
+  }: Props = $props()
 
   let showDropdown = $state(false)
   let filteredOptions = $state<OptionItem[]>([])
@@ -19,7 +25,7 @@
   let containerElement: HTMLDivElement | undefined = $state()
   let dropdownPosition = $state<'bottom' | 'top'>('bottom')
   let dropdownCoords = $state({ top: 0, left: 0, width: 0 })
-  
+
   // Keep input value in sync with prop changes, but only when it's a significant change
   $effect(() => {
     // Only update if the prop value changed and we're not currently focused on input
@@ -32,7 +38,7 @@
     if (inputValue.length === 0) {
       filteredOptions = options
     } else {
-      filteredOptions = options.filter(option => 
+      filteredOptions = options.filter((option) =>
         option.title.toLowerCase().includes(inputValue.toLowerCase())
       )
     }
@@ -43,24 +49,24 @@
 
   function updateDropdownPosition() {
     if (!containerElement || !showDropdown) return
-    
+
     // Use setTimeout to ensure dropdown is rendered
     setTimeout(() => {
       if (!containerElement) return
-      
+
       const containerRect = containerElement.getBoundingClientRect()
       const dropdownHeight = 200 // max-height of dropdown
       const viewportHeight = window.innerHeight
       const spaceBelow = viewportHeight - containerRect.bottom
       const spaceAbove = containerRect.top
-      
+
       // Calculate dropdown coordinates
       dropdownCoords = {
         left: containerRect.left,
         width: containerRect.width,
         top: 0 // Will be set based on position
       }
-      
+
       // Show dropdown above if there's more space above or if there's not enough space below
       if (spaceAbove > spaceBelow && spaceBelow < dropdownHeight) {
         dropdownPosition = 'top'
@@ -152,16 +158,22 @@
     onclick={handleClick}
     onblur={handleBlur}
   />
-  
+
   <div class="combobox-arrow">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-      <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path
+        d="M3 4.5L6 7.5L9 4.5"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
     </svg>
   </div>
-  
+
   {#if showDropdown}
-    <div 
-      class="combobox-dropdown {dropdownPosition}" 
+    <div
+      class="combobox-dropdown {dropdownPosition}"
       style="top: {dropdownCoords.top}px; left: {dropdownCoords.left}px; width: {dropdownCoords.width}px;"
     >
       {#each filteredOptions as option, index (option.title)}
@@ -189,10 +201,10 @@
 
   .combobox-input {
     width: 100%;
-    padding: 5px 30px 5px 10px; /* Add right padding for arrow */
+    padding: 4px 30px 4px 4px; /* Add right padding for arrow */
     border-radius: 4px;
     border: 1px solid #ddd;
-    font-size: 14px;
+    font-size: 13px;
     background-color: #fff;
     box-sizing: border-box;
     transition: border-color 0.2s ease;
