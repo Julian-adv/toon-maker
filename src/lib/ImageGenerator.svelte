@@ -207,18 +207,27 @@
 </main>
 
 <style>
+  :global(html, body) {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
   .prompt-input {
     min-height: 100vh;
+    width: 100vw;
+    margin: 0;
     padding: 1rem;
     background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    box-sizing: border-box;
   }
 
   .content-grid {
     display: grid;
     grid-template-columns: 1fr minmax(0, 832px);
     gap: 1rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
     height: calc(100vh - 2rem);
   }
 

@@ -78,7 +78,8 @@
 
   async function updateImage(filePath: string) {
     onImageChange(filePath)
-    await loadImageMetadata(filePath)
+    // TODO: Temporarily disabled metadata loading
+    // await loadImageMetadata(filePath)
     await updateFileList()
   }
 
