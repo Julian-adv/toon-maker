@@ -3,6 +3,7 @@
   import type { OptionItem, PromptCategory } from './types'
   import AutoCompleteTextarea from './AutoCompleteTextarea.svelte'
   import { savePromptsData } from './stores/promptsStore'
+
   interface Props {
     show: boolean
     label: string
@@ -35,6 +36,7 @@
   let selectedOption = $state<OptionItem>(value)
   let newOptionTitle = $state('')
   let newOptionValue = $state('')
+  let editedOptionTitle = $state('')
   let optionsListElement = $state<HTMLDivElement | undefined>()
   let draggedIndex = $state<number | null>(null)
   let dragOverIndex = $state<number | null>(null)
@@ -50,6 +52,7 @@
       selectedOption = value
       newOptionTitle = ''
       newOptionValue = value.value || ''
+      editedOptionTitle = value.title || ''
 
       // Initialize category form values
       editedCategoryName = category.name
@@ -69,6 +72,13 @@
     )
   )
 
+  // Check if new option title already exists
+  let titleAlreadyExists = $derived(
+    newOptionTitle.trim() && options.some(
+      (option) => option.title.toLowerCase() === newOptionTitle.trim().toLowerCase()
+    )
+  )
+
   function scrollToSelectedOption() {
     if (!optionsListElement || !selectedOption.title) return
 
@@ -83,7 +93,11 @@
 
   function handleOptionSelect(option: OptionItem) {
     // Auto-update current option before switching
-    if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
+    if (
+      selectedOption.title &&
+      (newOptionValue.trim() !== selectedOption.value ||
+        editedOptionTitle.trim() !== selectedOption.title)
+    ) {
       handleUpdateOption()
     }
 
@@ -92,12 +106,17 @@
       selectedOption = option
       newOptionTitle = ''
       newOptionValue = option.value || ''
+      editedOptionTitle = option.title || ''
     }, 0)
   }
 
   function handleAddNewOption() {
     // Auto-update current option before adding new one
-    if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
+    if (
+      selectedOption.title &&
+      (newOptionValue.trim() !== selectedOption.value ||
+        editedOptionTitle.trim() !== selectedOption.title)
+    ) {
       handleUpdateOption()
     }
 
@@ -113,7 +132,7 @@
 
     const newOption: OptionItem = {
       title: newOptionTitle.trim(),
-      value: ''
+      value: newOptionTitle.trim()
     }
 
     const updatedOptions = [...options, newOption]
@@ -126,17 +145,55 @@
     // Clear the input fields
     newOptionTitle = ''
     newOptionValue = ''
+    editedOptionTitle = newOption.title
   }
 
   function handleUpdateOption() {
-    if (newOptionValue.trim()) {
-      const updatedOptions = options.map((option) =>
-        option.title === selectedOption.title ? { ...option, value: newOptionValue.trim() } : option
-      )
+    const hasValueChange = newOptionValue.trim() && newOptionValue.trim() !== selectedOption.value
+    const hasTitleChange =
+      editedOptionTitle.trim() && editedOptionTitle.trim() !== selectedOption.title
+
+    if (hasValueChange || hasTitleChange) {
+      // Check if title already exists (excluding current option)
+      if (
+        hasTitleChange &&
+        editedOptionTitle.trim().toLowerCase() !== selectedOption.title.toLowerCase()
+      ) {
+        const titleExists = options.some(
+          (option) =>
+            option.title !== selectedOption.title &&
+            option.title.toLowerCase() === editedOptionTitle.trim().toLowerCase()
+        )
+        if (titleExists) {
+          alert('This title already exists!')
+          return
+        }
+      }
+
+      const updatedOptions = options.map((option) => {
+        if (option.title === selectedOption.title) {
+          return {
+            ...option,
+            title: hasTitleChange ? editedOptionTitle.trim() : option.title,
+            value: hasValueChange ? newOptionValue.trim() : option.value
+          }
+        }
+        return option
+      })
+
       onOptionsChange(updatedOptions)
-      selectedOption = { ...selectedOption, value: newOptionValue.trim() }
-      onValueChange(selectedOption)
-      newOptionValue = ''
+
+      const updatedSelectedOption = {
+        ...selectedOption,
+        title: hasTitleChange ? editedOptionTitle.trim() : selectedOption.title,
+        value: hasValueChange ? newOptionValue.trim() : selectedOption.value
+      }
+
+      selectedOption = updatedSelectedOption
+      onValueChange(updatedSelectedOption)
+
+      if (hasValueChange) newOptionValue = ''
+      if (hasTitleChange) editedOptionTitle = updatedSelectedOption.title
     }
   }
 
@@ -162,11 +219,16 @@
     }
     newOptionTitle = ''
     newOptionValue = ''
+    editedOptionTitle = ''
   }
 
   async function handleSave() {
     // Auto-update current option before closing
-    if (selectedOption.title && newOptionValue.trim() !== selectedOption.value) {
+    if (
+      selectedOption.title &&
+      (newOptionValue.trim() !== selectedOption.value ||
+        editedOptionTitle.trim() !== selectedOption.title)
+    ) {
       handleUpdateOption()
     }
 
@@ -321,6 +383,9 @@
             {/each}
           </select>
 
+          <!-- Separator -->
+          <div class="section-separator"></div>
+
           <!-- Options Header -->
           <div class="options-header">Options</div>
 
@@ -357,8 +422,16 @@
           </div>
 
           <!-- Selected Option Header -->
-          <div class="selected-option-header">
-            <h4>{selectedOption.title || 'No option selected'}</h4>
+          <div
+            class="selected-option-header"
+            class:disabled={!selectedOption.title || isLinkedToCategory}
+          >
+            <AutoCompleteTextarea
+              id="edit-option-title"
+              bind:value={editedOptionTitle}
+              placeholder="Option title"
+              rows={1}
+            />
             <button
               class="delete-option-btn"
               onclick={handleDeleteOption}
@@ -391,13 +464,13 @@
             <AutoCompleteTextarea
               id="new-option-title"
               bind:value={newOptionTitle}
-              placeholder="New option title"
+              placeholder="New option"
               rows={1}
             />
             <button
               class="add-option-btn"
               onclick={handleAddNewOption}
-              disabled={!newOptionTitle.trim() || isLinkedToCategory}
+              disabled={!newOptionTitle.trim() || titleAlreadyExists || isLinkedToCategory}
             >
               Add
             </button>
@@ -406,7 +479,15 @@
       </div>
       <div class="dialog-footer">
         <button type="button" class="delete-category-btn" onclick={handleDeleteCategory}>
-          Delete
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3,6 5,6 21,6"></polyline>
+            <path
+              d="M19,6V20a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6M8,6V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2V6"
+            ></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+          Delete category
         </button>
         <div class="dialog-actions">
           <button type="button" class="dialog-close-btn" onclick={onClose}> Close </button>
@@ -509,12 +590,13 @@
   .grid-container {
     display: grid;
     grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto auto auto 1fr auto auto;
+    grid-template-rows: auto auto auto auto auto 1fr auto auto;
     gap: 1rem;
     height: 100%;
     grid-template-areas:
       'category-name-label category-name-input'
       'alias-label alias-select'
+      'separator separator'
       'options-header value-header'
       'options-list selected-header'
       'options-list textarea'
@@ -623,13 +705,40 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
   }
 
-  .selected-option-header h4 {
+  .selected-option-header :global(.textarea-container) {
+    flex: 1;
     margin: 0;
-    font-size: 1rem;
-    color: #333;
-    text-align: left;
+  }
+
+  .selected-option-header :global(.textarea) {
+    padding: 6px 8px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    resize: none !important;
+    box-sizing: border-box !important;
+    line-height: 1.2 !important;
+  }
+
+  .selected-option-header :global(.textarea:focus) {
+    outline: none !important;
+    border-color: #2196f3 !important;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2) !important;
+  }
+
+  .selected-option-header.disabled :global(.textarea) {
+    background-color: #f5f5f5 !important;
+    color: #999 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
   }
 
   .delete-option-btn {
@@ -755,6 +864,9 @@
   }
 
   .delete-category-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
     padding: 0.5rem 1rem;
     background: #dc3545;
     color: white;
@@ -780,7 +892,7 @@
     font-size: 0.875rem;
     align-self: end;
     text-align: left;
-    margin-top: 0.25rem;
+    margin-top: 0rem;
   }
 
   .value-header {
@@ -790,6 +902,12 @@
     font-size: 0.875rem;
     align-self: end;
     text-align: left;
-    margin-top: 0.25rem;
+    margin-top: 0rem;
+  }
+
+  .section-separator {
+    grid-area: separator;
+    border-top: 1px solid #eee;
+    margin: 0rem 0;
   }
 </style>
