@@ -52,10 +52,61 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     const positiveCategories = promptsData.categories.filter((cat) => cat.id !== 'negative')
 
     // Build the combined positive prompt from dynamic categories (using resolved random values)
-    const promptValue = positiveCategories
-      .map((category) => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
-      .filter(Boolean)
-      .join(', ')
+    // First pass: calculate values for all categories once to avoid random value changes
+    const categoryValues = positiveCategories
+      .map((category) => ({
+        category,
+        value: getEffectiveCategoryValueFromResolved(category, resolvedRandomValues)
+      }))
+      .filter((item) => item.value)
+
+    const firstPassPromptValue = categoryValues.map((item) => item.value).join(', ')
+
+    // Second pass: remove categories that match -[category] patterns
+    let promptValue = firstPassPromptValue
+    const categoryRemovalPattern = /-\[([^\]]+)\]/g
+    let match
+    const categoriesToRemove: string[] = []
+
+    // Find all -[category] patterns
+    while ((match = categoryRemovalPattern.exec(firstPassPromptValue)) !== null) {
+      const categoryNameToRemove = match[1].toLowerCase()
+      categoriesToRemove.push(categoryNameToRemove)
+    }
+
+    // Remove values from matching categories
+    if (categoriesToRemove.length > 0) {
+      const filteredCategoryValues = categoryValues.filter((item) => {
+        const categoryName = item.category.name.toLowerCase()
+
+        // Check if category name matches directly
+        if (categoriesToRemove.includes(categoryName)) {
+          return false
+        }
+
+        // Check if this category is an alias of a category to remove
+        if (item.category.aliasOf) {
+          const aliasTarget = positiveCategories.find((cat) => cat.id === item.category.aliasOf)
+          if (aliasTarget && categoriesToRemove.includes(aliasTarget.name.toLowerCase())) {
+            return false
+          }
+        }
+
+        return true
+      })
+
+      console.log(
+        'filteredCategoryValues:\n' +
+          filteredCategoryValues.map((item) => `  ${item.category.name}: ${item.value}`).join('\n')
+      )
+
+      // Rebuild prompt without the excluded categories using pre-calculated values
+      promptValue = filteredCategoryValues
+        .map((item) => item.value)
+        .join(', ')
+        .replace(categoryRemovalPattern, '') // Remove any remaining -[category] patterns
+        .trim()
+    }
 
     // Build the negative prompt
     const negativePrompt = negativeCategory
