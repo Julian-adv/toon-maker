@@ -93,7 +93,7 @@
   }
 </script>
 
-<div class="input-group" class:disabled={isDisabled}>
+<div class="input-group" class:disabled={isDisabled} class:non-random={value.title !== '[Random]'} class:random={value.title === '[Random]'}>
   <div
     class="label-container"
     draggable="true"
@@ -308,5 +308,19 @@
 
   .disabled-text {
     font-style: italic;
+  }
+
+  .input-group.non-random {
+    background-color: #e0f2fe;
+    border-radius: 6px;
+    padding: 4px;
+    border: 2px solid #b3e5fc;
+  }
+
+  .input-group.random {
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    padding: 4px;
+    border: 2px solid #e0e0e0;
   }
 </style>

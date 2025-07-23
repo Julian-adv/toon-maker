@@ -149,7 +149,7 @@
   }
 
   function handleUpdateOption() {
-    const hasValueChange = newOptionValue.trim() && newOptionValue.trim() !== selectedOption.value
+    const hasValueChange = newOptionValue !== selectedOption.value
     const hasTitleChange =
       editedOptionTitle.trim() && editedOptionTitle.trim() !== selectedOption.title
 
@@ -175,7 +175,7 @@
           return {
             ...option,
             title: hasTitleChange ? editedOptionTitle.trim() : option.title,
-            value: hasValueChange ? newOptionValue.trim() : option.value
+            value: hasValueChange ? newOptionValue : option.value
           }
         }
         return option
@@ -186,7 +186,7 @@
       const updatedSelectedOption = {
         ...selectedOption,
         title: hasTitleChange ? editedOptionTitle.trim() : selectedOption.title,
-        value: hasValueChange ? newOptionValue.trim() : selectedOption.value
+        value: hasValueChange ? newOptionValue : selectedOption.value
       }
 
       selectedOption = updatedSelectedOption
