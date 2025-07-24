@@ -1,38 +1,47 @@
-# sv
+# Toon Maker
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Toon Maker is a SvelteKit-based web application that integrates with ComfyUI for AI character art generation. Create diverse character images through category-based prompts.
 
-## Creating a project
+![Toon Maker Screenshot](docs/images/app-screenshot.png)
 
-If you're seeing this, you've probably already done this step. Congrats!
+## Installation
+
+### 1. Install Dependencies
 
 ```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+npm install
 ```
 
-## Developing
+### 2. ComfyUI Setup
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+This application requires a local ComfyUI instance:
+
+- ComfyUI must be running at `http://127.0.0.1:8188`
+- The following nodes must be installed:
+  - SaveImageWebsocket
+  - FaceDetailer
+  - [WildDivide](https://github.com/Julian-adv/WildDivide)
+  - Other standard ComfyUI nodes
+
+### 3. Development Server
 
 ```bash
 npm run dev
+```
 
-# or start the server and open the app in a new browser tab
+Or to automatically open in browser:
+
+```bash
 npm run dev -- --open
 ```
 
-## Building
 
-To create a production version of your app:
+## Key Features
 
-```bash
-npm run build
-```
+- **Multi-category prompts** - Quality, character, outfit, pose, background categories
+- **AI image generation** - Real-time progress with ComfyUI integration
+- **20,000+ Danbooru tags** - Auto-complete suggestions for prompts
+- **Image navigation** - Browse generated images with metadata restoration
+- **Category management** - Add, edit, delete categories with drag & drop
 
-You can preview the production build with `npm run preview`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
