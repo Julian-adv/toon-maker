@@ -124,12 +124,12 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
           isExcluded = true
         }
         // Check if this category is an alias of a category to remove
-        else if (category.aliasOf) {
-          const aliasTarget = positiveCategories.find((cat) => cat.id === category.aliasOf)
-          if (aliasTarget && categoriesToRemove.includes(aliasTarget.name.toLowerCase())) {
-            isExcluded = true
-          }
-        }
+        // else if (category.aliasOf) {
+        //   const aliasTarget = positiveCategories.find((cat) => cat.id === category.aliasOf)
+        //   if (aliasTarget && categoriesToRemove.includes(aliasTarget.name.toLowerCase())) {
+        //     isExcluded = true
+        //   }
+        // }
 
         if (isExcluded) {
           excludedCategories.push(category)
@@ -184,11 +184,22 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     // Clone the default workflow
     const workflow = JSON.parse(JSON.stringify(defaultWorkflowPrompt))
 
-    // Update workflow with prompts
-    workflow['28'].inputs.wildcard_text = promptValue
-    workflow['28'].inputs.populated_text = promptValue
-    workflow['11'].inputs.text = promptValue
-    workflow['12'].inputs.text = negativePrompt
+    // Split promptValue by [SEP] for regional prompting
+    const promptParts = promptValue.split('[SEP]').map(part => part.trim()).filter(Boolean)
+    
+    // Assign prompts to different nodes
+    if (promptParts.length >= 1) {
+      workflow['12'].inputs.text = promptParts[0] // Overall base prompt
+    }
+    if (promptParts.length >= 2) {
+      workflow['13'].inputs.text = promptParts[1] // Left side prompt
+    }
+    if (promptParts.length >= 3) {
+      workflow['51'].inputs.text = promptParts[2] // Right side prompt
+    }
+    
+    // Set negative prompt
+    workflow['18'].inputs.text = negativePrompt
 
     // Configure workflow based on settings
     configureWorkflow(workflow, promptsData, settings)
@@ -220,29 +231,27 @@ function configureWorkflow(
 ) {
   // Set checkpoint
   if (promptsData.selectedCheckpoint) {
-    workflow['10'].inputs.ckpt_name = promptsData.selectedCheckpoint
+    workflow['11'].inputs.ckpt_name = promptsData.selectedCheckpoint
   }
 
   // Apply settings values to workflow
-  workflow['8'].inputs.steps = settings.steps
-  workflow['8'].inputs.cfg = settings.cfgScale
-  workflow['8'].inputs.sampler_name = settings.sampler
-  workflow['9'].inputs.width = settings.imageWidth
-  workflow['9'].inputs.height = settings.imageHeight
+  workflow['45'].inputs.steps = settings.steps
+  workflow['14'].inputs.cfg = settings.cfgScale
+  workflow['15'].inputs.sampler_name = settings.sampler
+  workflow['16'].inputs.width = settings.imageWidth
+  workflow['16'].inputs.height = settings.imageHeight
 
   // Configure optional features
   if (promptsData.useUpscale) {
     // Enable upscale nodes if they exist
-    if (workflow['17']) {
-      workflow['17'].inputs.enabled = true
+    if (workflow['64']) {
+      // Upscale is handled by ImageUpscaleWithModel node
     }
   }
 
   if (promptsData.useFaceDetailer) {
-    // Enable face detailer nodes if they exist
-    if (workflow['18']) {
-      workflow['18'].inputs.enabled = true
-    }
+    // Face detailer nodes are already in the workflow (56, 69)
+    // They are enabled by default in this workflow
   }
 }
 
@@ -250,23 +259,21 @@ function applySeedsToWorkflow(workflow: ComfyUIWorkflow) {
   // Apply random seed to relevant nodes
   const seed = Math.floor(Math.random() * 10000000000000000)
 
-  // Set seed for WildcardDivide node
-  workflow['28'].inputs.seed = seed
+  // Set seed for SamplerCustom node
+  workflow['14'].inputs.noise_seed = seed
 
-  // Set seed for KSamplers
-  workflow['8'].inputs.seed = seed
-
-  if (workflow['17']) {
-    workflow['17'].inputs.seed = seed + 1
+  // Set seed for BasicScheduler
+  if (workflow['45']) {
+    // BasicScheduler doesn't have a seed input, it's controlled by SamplerCustom
   }
 
   // Set seed for FaceDetailer nodes
-  if (workflow['5']) {
-    workflow['5'].inputs.seed = seed + 2
+  if (workflow['56']) {
+    workflow['56'].inputs.seed = seed + 1
   }
 
-  if (workflow['22']) {
-    workflow['22'].inputs.seed = seed + 3
+  if (workflow['69']) {
+    workflow['69'].inputs.seed = seed + 2
   }
 }
 
@@ -277,19 +284,19 @@ function addSaveImageWebsocketNode(workflow: ComfyUIWorkflow, promptsData: Promp
   if (promptsData.useUpscale) {
     if (promptsData.useFaceDetailer) {
       // Upscale=true, FaceDetailer=true
-      imageSourceNodeId = '22' // Output of FaceDetailer2
+      imageSourceNodeId = '69' // Output of second FaceDetailer after upscale
     } else {
       // Upscale=true, FaceDetailer=false
-      imageSourceNodeId = '15' // Output of upscaled VAE Decode ('15')
+      imageSourceNodeId = '64' // Output of ImageUpscaleWithModel
     }
   } else {
     // Upscale=false
     if (promptsData.useFaceDetailer) {
       // Upscale=false, FaceDetailer=true
-      imageSourceNodeId = '5' // Output of FaceDetailer1
+      imageSourceNodeId = '56' // Output of first FaceDetailer
     } else {
       // Upscale=false, FaceDetailer=false
-      imageSourceNodeId = '18' // Output of non-upscaled VAE Decode ('18')
+      imageSourceNodeId = '19' // Output of VAE Decode
     }
   }
 

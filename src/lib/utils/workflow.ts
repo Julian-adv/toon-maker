@@ -3,12 +3,191 @@
 export const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
 export const defaultWorkflowPrompt = {
-  '5': {
+  '2': {
     inputs: {
-      guide_size: 512,
+      value: 0,
+      width: 832,
+      height: 1216
+    },
+    class_type: 'SolidMask',
+    _meta: {
+      title: 'SolidMask'
+    }
+  },
+  '3': {
+    inputs: {
+      value: 1,
+      width: 416,
+      height: 1216
+    },
+    class_type: 'SolidMask',
+    _meta: {
+      title: 'SolidMask'
+    }
+  },
+  '4': {
+    inputs: {
+      x: 0,
+      y: 0,
+      operation: 'add',
+      destination: ['2', 0],
+      source: ['3', 0]
+    },
+    class_type: 'MaskComposite',
+    _meta: {
+      title: 'MaskComposite'
+    }
+  },
+  '10': {
+    inputs: {
+      model: ['11', 0],
+      base_mask: ['27', 0],
+      cond_1: ['13', 0],
+      mask_1: ['4', 0],
+      cond_2: ['51', 0],
+      mask_2: ['53', 0]
+    },
+    class_type: 'AttentionCouple|cgem156',
+    _meta: {
+      title: 'Attention Couple 🍌'
+    }
+  },
+  '11': {
+    inputs: {
+      ckpt_name: 'model.safetensors'
+    },
+    class_type: 'CheckpointLoaderSimple',
+    _meta: {
+      title: 'Load Checkpoint'
+    }
+  },
+  '12': {
+    inputs: {
+      text: 'overall base prompt',
+      clip: ['11', 1]
+    },
+    class_type: 'CLIPTextEncode',
+    _meta: {
+      title: 'CLIP Text Encode (Prompt)'
+    }
+  },
+  '13': {
+    inputs: {
+      text: 'left side prompt',
+      clip: ['11', 1]
+    },
+    class_type: 'CLIPTextEncode',
+    _meta: {
+      title: 'CLIP Text Encode (Prompt)'
+    }
+  },
+  '14': {
+    inputs: {
+      add_noise: true,
+      noise_seed: 712011592294887,
+      cfg: 4.5,
+      model: ['10', 0],
+      positive: ['12', 0],
+      negative: ['18', 0],
+      sampler: ['15', 0],
+      sigmas: ['45', 0],
+      latent_image: ['16', 0]
+    },
+    class_type: 'SamplerCustom',
+    _meta: {
+      title: 'SamplerCustom'
+    }
+  },
+  '15': {
+    inputs: {
+      sampler_name: 'euler_ancestral'
+    },
+    class_type: 'KSamplerSelect',
+    _meta: {
+      title: 'KSamplerSelect'
+    }
+  },
+  '16': {
+    inputs: {
+      width: 832,
+      height: 1216,
+      batch_size: 1
+    },
+    class_type: 'EmptyLatentImage',
+    _meta: {
+      title: 'Empty Latent Image'
+    }
+  },
+  '18': {
+    inputs: {
+      text: 'negative prompt',
+      clip: ['11', 1]
+    },
+    class_type: 'CLIPTextEncode',
+    _meta: {
+      title: 'CLIP Text Encode (Prompt)'
+    }
+  },
+  '19': {
+    inputs: {
+      samples: ['14', 1],
+      vae: ['11', 2]
+    },
+    class_type: 'VAEDecode',
+    _meta: {
+      title: 'VAE Decode'
+    }
+  },
+  '27': {
+    inputs: {
+      mask: ['2', 0]
+    },
+    class_type: 'InvertMask',
+    _meta: {
+      title: 'InvertMask'
+    }
+  },
+  '45': {
+    inputs: {
+      scheduler: 'simple',
+      steps: 25,
+      denoise: 1,
+      model: ['10', 0]
+    },
+    class_type: 'BasicScheduler',
+    _meta: {
+      title: 'BasicScheduler'
+    }
+  },
+  '51': {
+    inputs: {
+      text: 'right side prompt',
+      clip: ['11', 1]
+    },
+    class_type: 'CLIPTextEncode',
+    _meta: {
+      title: 'CLIP Text Encode (Prompt)'
+    }
+  },
+  '53': {
+    inputs: {
+      x: 416,
+      y: 0,
+      operation: 'add',
+      destination: ['2', 0],
+      source: ['3', 0]
+    },
+    class_type: 'MaskComposite',
+    _meta: {
+      title: 'MaskComposite'
+    }
+  },
+  '56': {
+    inputs: {
+      guide_size: 1024,
       guide_size_for: true,
       max_size: 1536,
-      seed: 836267740683999,
+      seed: 136661438945910,
       steps: 15,
       cfg: 4.5,
       sampler_name: 'euler_ancestral',
@@ -33,22 +212,31 @@ export const defaultWorkflowPrompt = {
       noise_mask_feather: 20,
       tiled_encode: false,
       tiled_decode: false,
-      image: ['18', 0],
-      model: ['10', 0],
-      clip: ['28', 1],
-      vae: ['10', 2],
-      positive: ['28', 2],
-      negative: ['28', 3],
-      bbox_detector: ['20', 0],
-      sam_model_opt: ['6', 0],
-      segm_detector_opt: ['29', 1]
+      image: ['19', 0],
+      model: ['11', 0],
+      clip: ['11', 1],
+      vae: ['11', 2],
+      positive: ['12', 0],
+      negative: ['18', 0],
+      bbox_detector: ['57', 0],
+      sam_model_opt: ['58', 0],
+      segm_detector_opt: ['59', 1]
     },
     class_type: 'FaceDetailer',
     _meta: {
-      title: 'FaceDetailer1'
+      title: 'FaceDetailer'
     }
   },
-  '6': {
+  '57': {
+    inputs: {
+      model_name: 'bbox/face_yolov8m.pt'
+    },
+    class_type: 'UltralyticsDetectorProvider',
+    _meta: {
+      title: 'UltralyticsDetectorProvider'
+    }
+  },
+  '58': {
     inputs: {
       model_name: 'sam_vit_b_01ec64.pth',
       device_mode: 'AUTO'
@@ -58,128 +246,40 @@ export const defaultWorkflowPrompt = {
       title: 'SAMLoader (Impact)'
     }
   },
-  '8': {
+  '59': {
     inputs: {
-      seed: 764212958336468,
-      steps: 28,
-      cfg: 5,
-      sampler_name: 'euler_ancestral',
-      scheduler: 'simple',
-      denoise: 1,
-      model: ['28', 0],
-      positive: ['28', 2],
-      negative: ['28', 3],
-      latent_image: ['9', 0]
-    },
-    class_type: 'KSampler',
-    _meta: {
-      title: 'KSampler'
-    }
-  },
-  '9': {
-    inputs: {
-      width: ['28', 5],
-      height: ['28', 6],
-      batch_size: 1
-    },
-    class_type: 'EmptyLatentImage',
-    _meta: {
-      title: 'Empty Latent Image'
-    }
-  },
-  '10': {
-    inputs: {
-      ckpt_name: ''
-    },
-    class_type: 'CheckpointLoaderSimple',
-    _meta: {
-      title: 'Load Checkpoint'
-    }
-  },
-  '11': {
-    inputs: {
-      text: '',
-      clip: ['10', 1]
-    },
-    class_type: 'CLIPTextEncode',
-    _meta: {
-      title: 'CLIP Text Encode (Prompt)'
-    }
-  },
-  '12': {
-    inputs: {
-      text: '',
-      clip: ['10', 1]
-    },
-    class_type: 'CLIPTextEncode',
-    _meta: {
-      title: 'CLIP Text Encode (Prompt)'
-    }
-  },
-  '14': {
-    inputs: {
-      upscale_method: 'nearest-exact',
-      scale_by: 2.0,
-      samples: ['8', 0]
-    },
-    class_type: 'LatentUpscaleBy',
-    _meta: {
-      title: 'Upscale Latent By'
-    }
-  },
-  '15': {
-    inputs: {
-      samples: ['17', 0],
-      vae: ['10', 2]
-    },
-    class_type: 'VAEDecode',
-    _meta: {
-      title: 'VAE Decode'
-    }
-  },
-  '17': {
-    inputs: {
-      seed: 265369671560568,
-      steps: 28,
-      cfg: 5,
-      sampler_name: 'euler_ancestral',
-      scheduler: 'simple',
-      denoise: 0.4,
-      model: ['10', 0],
-      positive: ['28', 2],
-      negative: ['28', 3],
-      latent_image: ['14', 0]
-    },
-    class_type: 'KSampler',
-    _meta: {
-      title: 'KSampler'
-    }
-  },
-  '18': {
-    inputs: {
-      samples: ['8', 0],
-      vae: ['10', 2]
-    },
-    class_type: 'VAEDecode',
-    _meta: {
-      title: 'VAE Decode'
-    }
-  },
-  '20': {
-    inputs: {
-      model_name: 'bbox/face_yolov8m.pt'
+      model_name: 'segm/face_yolov8m-seg_60.pt'
     },
     class_type: 'UltralyticsDetectorProvider',
     _meta: {
       title: 'UltralyticsDetectorProvider'
     }
   },
-  '22': {
+  '64': {
     inputs: {
-      guide_size: 512,
+      upscale_model: ['65', 0],
+      image: ['19', 0]
+    },
+    class_type: 'ImageUpscaleWithModel',
+    _meta: {
+      title: 'Upscale Image (using Model)'
+    }
+  },
+  '65': {
+    inputs: {
+      model_name: '4x_foolhardy_Remacri.pt'
+    },
+    class_type: 'UpscaleModelLoader',
+    _meta: {
+      title: 'Load Upscale Model'
+    }
+  },
+  '69': {
+    inputs: {
+      guide_size: 1024,
       guide_size_for: true,
       max_size: 1536,
-      seed: 781342677367830,
+      seed: 562575562233700,
       steps: 15,
       cfg: 4.5,
       sampler_name: 'euler_ancestral',
@@ -204,48 +304,28 @@ export const defaultWorkflowPrompt = {
       noise_mask_feather: 20,
       tiled_encode: false,
       tiled_decode: false,
-      image: ['15', 0],
-      model: ['10', 0],
-      clip: ['28', 1],
-      vae: ['10', 2],
-      positive: ['28', 2],
-      negative: ['28', 3],
-      bbox_detector: ['20', 0],
-      sam_model_opt: ['6', 0],
-      segm_detector_opt: ['29', 1]
+      image: ['64', 0],
+      model: ['11', 0],
+      clip: ['11', 1],
+      vae: ['11', 2],
+      positive: ['12', 0],
+      negative: ['18', 0],
+      bbox_detector: ['57', 0],
+      sam_model_opt: ['58', 0],
+      segm_detector_opt: ['59', 1]
     },
     class_type: 'FaceDetailer',
     _meta: {
-      title: 'FaceDetailer2'
+      title: 'FaceDetailer'
     }
   },
-  '28': {
+  '77': {
     inputs: {
-      wildcard_text: '',
-      populated_text: '',
-      mode: false,
-      'Select to add LoRA': 'Select the LoRA to add to the text',
-      'Select to add Wildcard': 'Select the Wildcard to add to the text',
-      width: 832,
-      height: 1216,
-      seed: 566998447548836,
-      overall: true,
-      model: ['10', 0],
-      clip: ['10', 1],
-      negative: ['12', 0]
+      images: ['56', 0]
     },
-    class_type: 'WildcardDivide',
+    class_type: 'SaveImageWebsocket',
     _meta: {
-      title: 'Wildcard Divide'
-    }
-  },
-  '29': {
-    inputs: {
-      model_name: 'segm/face_yolov8m-seg_60.pt'
-    },
-    class_type: 'UltralyticsDetectorProvider',
-    _meta: {
-      title: 'UltralyticsDetectorProvider'
+      title: 'SaveImageWebsocket'
     }
   }
 }
