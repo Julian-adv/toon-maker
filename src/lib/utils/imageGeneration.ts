@@ -8,6 +8,36 @@ import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
 import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
 import type { PromptsData, Settings, ProgressData, OptionItem, PromptCategory } from '$lib/types'
 
+/**
+ * Replaces category reference patterns like {categoryName} with their resolved values
+ */
+function replaceCategoryReferences(
+  promptValue: string,
+  positiveCategories: PromptCategory[],
+  resolvedRandomValues: Record<string, OptionItem>
+): string {
+  const categoryReferencePattern = /\{([^}]+)\}/g
+  return promptValue.replace(categoryReferencePattern, (match, categoryName) => {
+    const categoryNameLower = categoryName.toLowerCase()
+
+    // Find category by name (case insensitive) from all positive categories
+    const referencedCategory = positiveCategories.find(
+      (cat) => cat.name.toLowerCase() === categoryNameLower
+    )
+
+    if (referencedCategory) {
+      const resolvedValue = getEffectiveCategoryValueFromResolved(
+        referencedCategory,
+        resolvedRandomValues
+      )
+      return resolvedValue || ''
+    }
+
+    // If category not found, return the original pattern
+    return match
+  })
+}
+
 // Workflow node interfaces
 interface WorkflowNodeInput {
   [key: string]: string | number | boolean | [string, number] | undefined
@@ -55,12 +85,19 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
 
     // Build the combined positive prompt from dynamic categories (using resolved random values)
     // First pass: build initial prompt value
-    const firstPassPromptValue = positiveCategories
+    let firstPassPromptValue = positiveCategories
       .map((category) => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
       .filter(Boolean)
       .join(', ')
 
-    // Second pass: remove categories that match -[category] patterns
+    // Second pass: replace {category name} patterns with resolved random values
+    firstPassPromptValue = replaceCategoryReferences(
+      firstPassPromptValue,
+      positiveCategories,
+      resolvedRandomValues
+    )
+
+    // Third pass: remove categories that match -[category] patterns
     let promptValue = firstPassPromptValue
     const categoryRemovalPattern = /-\[([^\]]+)\]/g
     let match
@@ -108,7 +145,12 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
 
       console.log(
         'filteredCategories:\n' +
-          filteredCategories.map((cat) => `  ${cat.name}: ${getEffectiveCategoryValueFromResolved(cat, resolvedRandomValues)}`).join('\n')
+          filteredCategories
+            .map(
+              (cat) =>
+                `  ${cat.name}: ${getEffectiveCategoryValueFromResolved(cat, resolvedRandomValues)}`
+            )
+            .join('\n')
       )
 
       // Rebuild prompt without the excluded categories
@@ -118,6 +160,9 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
         .join(', ')
         .replace(categoryRemovalPattern, '') // Remove any remaining -[category] patterns
         .trim()
+
+      // Apply category reference replacement to the rebuilt prompt
+      promptValue = replaceCategoryReferences(promptValue, positiveCategories, resolvedRandomValues)
     }
 
     // Build the negative prompt
