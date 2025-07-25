@@ -270,10 +270,10 @@
   }
 
   .input-group.disabled {
-    background-color: #ffebee;
+    background-color: #ffebee !important;
     border-radius: 6px;
     padding: 4px;
-    border: 2px solid #ffcdd2;
+    border: 2px solid #ffcdd2 !important;
     opacity: 0.8;
   }
 
