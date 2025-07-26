@@ -85,7 +85,7 @@
     const selectedButton = optionsListElement.querySelector('.option-item.selected') as HTMLElement
     if (selectedButton) {
       selectedButton.scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'instant',
         block: 'center'
       })
     }
