@@ -184,9 +184,9 @@ export const defaultWorkflowPrompt = {
   },
   '56': {
     inputs: {
-      guide_size: 1024,
+      guide_size: 512,
       guide_size_for: true,
-      max_size: 1536,
+      max_size: 1024,
       seed: 136661438945910,
       steps: 15,
       cfg: 4.5,
@@ -224,7 +224,7 @@ export const defaultWorkflowPrompt = {
     },
     class_type: 'FaceDetailer',
     _meta: {
-      title: 'FaceDetailer'
+      title: 'FaceDetailer1'
     }
   },
   '57': {
@@ -248,7 +248,7 @@ export const defaultWorkflowPrompt = {
   },
   '59': {
     inputs: {
-      model_name: 'segm/face_yolov8m-seg_60.pt'
+      model_name: 'segm/person_yolov8m-seg.pt'
     },
     class_type: 'UltralyticsDetectorProvider',
     _meta: {

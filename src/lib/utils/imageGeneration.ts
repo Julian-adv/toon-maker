@@ -78,6 +78,9 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     onCategoriesDisabled
   } = options
 
+  // Clone the default workflow
+  const workflow = JSON.parse(JSON.stringify(defaultWorkflowPrompt))
+
   try {
     // Separate negative category from positive categories
     const negativeCategory = promptsData.categories.find((cat) => cat.id === 'negative')
@@ -123,6 +126,18 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
         if (categoriesToRemove.includes(categoryName)) {
           isExcluded = true
         }
+        
+        // Check for wildcard patterns like *2, *1, etc.
+        for (const pattern of categoriesToRemove) {
+          if (pattern.startsWith('*')) {
+            const suffix = pattern.substring(1) // Remove the *
+            if (categoryName.endsWith(suffix)) {
+              isExcluded = true
+              break
+            }
+          }
+        }
+        
         // Check if this category is an alias of a category to remove
         // else if (category.aliasOf) {
         //   const aliasTarget = positiveCategories.find((cat) => cat.id === category.aliasOf)
@@ -163,6 +178,48 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
 
       // Apply category reference replacement to the rebuilt prompt
       promptValue = replaceCategoryReferences(promptValue, positiveCategories, resolvedRandomValues)
+      // After processing filteredCategories, check for face categories
+      const faceCategories = filteredCategories.filter((cat) =>
+        cat.name.toLowerCase().includes('face')
+      )
+      if (faceCategories.length > 0) {
+        // Group categories by suffix number (no number, 1, 2, 3, etc.)
+        const categoryGroups = new Map<string, PromptCategory[]>()
+        
+        faceCategories.forEach(cat => {
+          const numberMatch = cat.name.match(/(\d+)$/) // Match number at end
+          const groupKey = numberMatch ? numberMatch[1] : '0' // '0' for no number
+          
+          if (!categoryGroups.has(groupKey)) {
+            categoryGroups.set(groupKey, [])
+          }
+          categoryGroups.get(groupKey)!.push(cat)
+        })
+        
+        // Sort groups by key: 0, 1, 2, 3, etc.
+        const sortedKeys = Array.from(categoryGroups.keys()).sort((a, b) => {
+          return parseInt(a) - parseInt(b)
+        })
+        
+        // Combine groups with [SEP]
+        const wildcardParts = []
+        for (const key of sortedKeys) {
+          const categories = categoryGroups.get(key)!
+          const values = categories
+            .map((cat) => getEffectiveCategoryValueFromResolved(cat, resolvedRandomValues))
+            .filter(Boolean)
+          
+          if (values.length > 0) {
+            wildcardParts.push(values.join(', '))
+          }
+        }
+        
+        if (wildcardParts.length > 0) {
+          // Join parts with [SEP] and set to wildcard
+          workflow['56'].inputs.wildcard = '[ASC]\n' + wildcardParts.join(' [SEP]\n')
+          console.log(`face detailer wildcard: ${workflow['56'].inputs.wildcard}`)
+        }
+      }
     }
 
     // Build the negative prompt
@@ -181,23 +238,39 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     // Generate unique client ID
     const clientId = crypto.randomUUID()
 
-    // Clone the default workflow
-    const workflow = JSON.parse(JSON.stringify(defaultWorkflowPrompt))
-
     // Split promptValue by [SEP] for regional prompting
-    const promptParts = promptValue.split('[SEP]').map(part => part.trim()).filter(Boolean)
-    
-    // Assign prompts to different nodes
-    if (promptParts.length >= 1) {
+    const promptParts = promptValue
+      .split('[SEP]')
+      .map((part) => part.trim())
+      .filter(Boolean)
+
+    // Assign prompts to different nodes based on number of parts
+    if (promptParts.length === 1) {
+      // Single prompt mode: disable regional separation
       workflow['12'].inputs.text = promptParts[0] // Overall base prompt
-    }
-    if (promptParts.length >= 2) {
+      workflow['13'].inputs.text = '' // Left side prompt (empty)
+      workflow['51'].inputs.text = '' // Right side prompt (empty)
+      // Connect both masks to the empty mask to not apply prompt
+      workflow['10'].inputs.mask_1 = ['2', 0]
+      workflow['10'].inputs.mask_2 = ['2', 0]
+    } else if (promptParts.length === 2) {
+      // Two prompt mode: left region and base
+      workflow['12'].inputs.text = promptParts[0] // Overall base prompt
       workflow['13'].inputs.text = promptParts[1] // Left side prompt
+      workflow['51'].inputs.text = '' // Right side prompt (empty)
+      // mask_1 uses base mask(whole), mask_2 uses empty mask
+      workflow['10'].inputs.mask_1 = ['27', 0]
+      workflow['10'].inputs.mask_2 = ['2', 0]
+    } else {
+      // Three+ prompt mode: use full regional separation
+      workflow['12'].inputs.text = promptParts[0] // Overall base prompt
+      workflow['13'].inputs.text = promptParts[1] // Left side prompt
+      workflow['51'].inputs.text = promptParts[2] || '' // Right side prompt
+      // Keep original mask configuration for regional prompting
+      workflow['10'].inputs.mask_1 = ['4', 0]
+      workflow['10'].inputs.mask_2 = ['53', 0]
     }
-    if (promptParts.length >= 3) {
-      workflow['51'].inputs.text = promptParts[2] // Right side prompt
-    }
-    
+
     // Set negative prompt
     workflow['18'].inputs.text = negativePrompt
 
