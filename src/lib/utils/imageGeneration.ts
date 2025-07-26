@@ -5,38 +5,10 @@
 import { saveImage } from './fileIO'
 import { connectWebSocket, type WebSocketCallbacks } from './comfyui'
 import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
+import { processPrompts } from './promptProcessing'
 import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
 import type { PromptsData, Settings, ProgressData, OptionItem, PromptCategory } from '$lib/types'
 
-/**
- * Replaces category reference patterns like {categoryName} with their resolved values
- */
-function replaceCategoryReferences(
-  promptValue: string,
-  positiveCategories: PromptCategory[],
-  resolvedRandomValues: Record<string, OptionItem>
-): string {
-  const categoryReferencePattern = /\{([^}]+)\}/g
-  return promptValue.replace(categoryReferencePattern, (match, categoryName) => {
-    const categoryNameLower = categoryName.toLowerCase()
-
-    // Find category by name (case insensitive) from all positive categories
-    const referencedCategory = positiveCategories.find(
-      (cat) => cat.name.toLowerCase() === categoryNameLower
-    )
-
-    if (referencedCategory) {
-      const resolvedValue = getEffectiveCategoryValueFromResolved(
-        referencedCategory,
-        resolvedRandomValues
-      )
-      return resolvedValue || ''
-    }
-
-    // If category not found, return the original pattern
-    return match
-  })
-}
 
 // Workflow node interfaces
 interface WorkflowNodeInput {
@@ -86,141 +58,20 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     const negativeCategory = promptsData.categories.find((cat) => cat.id === 'negative')
     const positiveCategories = promptsData.categories.filter((cat) => cat.id !== 'negative')
 
-    // Build the combined positive prompt from dynamic categories (using resolved random values)
-    // First pass: build initial prompt value
-    let firstPassPromptValue = positiveCategories
-      .map((category) => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
-      .filter(Boolean)
-      .join(', ')
-
-    // Second pass: replace {category name} patterns with resolved random values
-    firstPassPromptValue = replaceCategoryReferences(
-      firstPassPromptValue,
+    // Process prompts through multiple passes
+    const { promptValue, excludedCategories, faceDetailerWildcard } = processPrompts(
       positiveCategories,
       resolvedRandomValues
     )
 
-    // Third pass: remove categories that match -[category] patterns
-    let promptValue = firstPassPromptValue
-    const categoryRemovalPattern = /-\[([^\]]+)\]/g
-    let match
-    const categoriesToRemove: string[] = []
-
-    // Find all -[category] patterns
-    while ((match = categoryRemovalPattern.exec(firstPassPromptValue)) !== null) {
-      const categoryNameToRemove = match[1].toLowerCase()
-      categoriesToRemove.push(categoryNameToRemove)
+    // Notify about excluded categories for UI feedback
+    if (excludedCategories.length > 0 && onCategoriesDisabled) {
+      onCategoriesDisabled(excludedCategories)
     }
 
-    // Remove values from matching categories
-    if (categoriesToRemove.length > 0) {
-      const filteredCategories: PromptCategory[] = []
-      const excludedCategories: PromptCategory[] = []
-
-      // Single loop to categorize all categories
-      positiveCategories.forEach((category) => {
-        const categoryName = category.name.toLowerCase()
-        let isExcluded = false
-
-        // Check if category name matches directly
-        if (categoriesToRemove.includes(categoryName)) {
-          isExcluded = true
-        }
-        
-        // Check for wildcard patterns like *2, *1, etc.
-        for (const pattern of categoriesToRemove) {
-          if (pattern.startsWith('*')) {
-            const suffix = pattern.substring(1) // Remove the *
-            if (categoryName.endsWith(suffix)) {
-              isExcluded = true
-              break
-            }
-          }
-        }
-        
-        // Check if this category is an alias of a category to remove
-        // else if (category.aliasOf) {
-        //   const aliasTarget = positiveCategories.find((cat) => cat.id === category.aliasOf)
-        //   if (aliasTarget && categoriesToRemove.includes(aliasTarget.name.toLowerCase())) {
-        //     isExcluded = true
-        //   }
-        // }
-
-        if (isExcluded) {
-          excludedCategories.push(category)
-        } else {
-          filteredCategories.push(category)
-        }
-      })
-
-      // Notify about excluded categories for UI feedback
-      if (excludedCategories.length > 0 && onCategoriesDisabled) {
-        onCategoriesDisabled(excludedCategories)
-      }
-
-      console.log(
-        'filteredCategories:\n' +
-          filteredCategories
-            .map(
-              (cat) =>
-                `  ${cat.name}: ${getEffectiveCategoryValueFromResolved(cat, resolvedRandomValues)}`
-            )
-            .join('\n')
-      )
-
-      // Rebuild prompt without the excluded categories
-      promptValue = filteredCategories
-        .map((category) => getEffectiveCategoryValueFromResolved(category, resolvedRandomValues))
-        .filter(Boolean)
-        .join(', ')
-        .replace(categoryRemovalPattern, '') // Remove any remaining -[category] patterns
-        .trim()
-
-      // Apply category reference replacement to the rebuilt prompt
-      promptValue = replaceCategoryReferences(promptValue, positiveCategories, resolvedRandomValues)
-      // After processing filteredCategories, check for face categories
-      const faceCategories = filteredCategories.filter((cat) =>
-        cat.name.toLowerCase().includes('face')
-      )
-      if (faceCategories.length > 0) {
-        // Group categories by suffix number (no number, 1, 2, 3, etc.)
-        const categoryGroups = new Map<string, PromptCategory[]>()
-        
-        faceCategories.forEach(cat => {
-          const numberMatch = cat.name.match(/(\d+)$/) // Match number at end
-          const groupKey = numberMatch ? numberMatch[1] : '0' // '0' for no number
-          
-          if (!categoryGroups.has(groupKey)) {
-            categoryGroups.set(groupKey, [])
-          }
-          categoryGroups.get(groupKey)!.push(cat)
-        })
-        
-        // Sort groups by key: 0, 1, 2, 3, etc.
-        const sortedKeys = Array.from(categoryGroups.keys()).sort((a, b) => {
-          return parseInt(a) - parseInt(b)
-        })
-        
-        // Combine groups with [SEP]
-        const wildcardParts = []
-        for (const key of sortedKeys) {
-          const categories = categoryGroups.get(key)!
-          const values = categories
-            .map((cat) => getEffectiveCategoryValueFromResolved(cat, resolvedRandomValues))
-            .filter(Boolean)
-          
-          if (values.length > 0) {
-            wildcardParts.push(values.join(', '))
-          }
-        }
-        
-        if (wildcardParts.length > 0) {
-          // Join parts with [SEP] and set to wildcard
-          workflow['56'].inputs.wildcard = '[ASC]\n' + wildcardParts.join(' [SEP]\n')
-          console.log(`face detailer wildcard: ${workflow['56'].inputs.wildcard}`)
-        }
-      }
-    }
+    // Set face detailer wildcard
+    workflow['56'].inputs.wildcard = faceDetailerWildcard
+    console.log(`face detailer wildcard: ${faceDetailerWildcard}`)
 
     // Build the negative prompt
     const negativePrompt = negativeCategory
