@@ -44,7 +44,8 @@ export async function POST({ request }) {
       categories: data.categories.map(cleanCategoryData),
       selectedCheckpoint: data.selectedCheckpoint,
       useUpscale: data.useUpscale,
-      useFaceDetailer: data.useFaceDetailer
+      useFaceDetailer: data.useFaceDetailer,
+      selectedLoras: data.selectedLoras
     }
     
     await fs.writeFile(filePath, JSON.stringify(cleanedData, null, 2))
@@ -110,7 +111,8 @@ export async function GET() {
         categories: createDefaultCategories(),
         selectedCheckpoint: null,
         useUpscale: true,
-        useFaceDetailer: true
+        useFaceDetailer: true,
+        selectedLoras: []
       }
       return json(defaultPrompts)
     }

@@ -8,7 +8,8 @@ const defaultPromptsData: PromptsData = {
   categories: [],
   selectedCheckpoint: null,
   useUpscale: false,
-  useFaceDetailer: false
+  useFaceDetailer: false,
+  selectedLoras: []
 }
 
 // Create reactive store
@@ -94,6 +95,10 @@ export function updateUpscale(enabled: boolean) {
 
 export function updateFaceDetailer(enabled: boolean) {
   promptsData.update(data => ({ ...data, useFaceDetailer: enabled }))
+}
+
+export function updateSelectedLoras(loras: string[]) {
+  promptsData.update(data => ({ ...data, selectedLoras: loras }))
 }
 
 export function reorderCategories(fromIndex: number, toIndex: number) {

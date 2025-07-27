@@ -6,7 +6,7 @@
     onLoraChange: (loras: string[]) => void
   }
 
-  let { selectedLoras = $bindable([]), onLoraChange }: Props = $props()
+  let { selectedLoras, onLoraChange }: Props = $props()
 
   let availableLoras: string[] = $state([])
   let loading = $state(true)
@@ -43,7 +43,6 @@
       newSelectedLoras = selectedLoras.filter((l) => l !== lora)
     }
 
-    selectedLoras = newSelectedLoras
     onLoraChange(newSelectedLoras)
   }
 

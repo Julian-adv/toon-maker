@@ -45,6 +45,7 @@ export interface PromptsData {
   selectedCheckpoint: string | null
   useUpscale: boolean
   useFaceDetailer: boolean
+  selectedLoras: string[]
 }
 
 export interface ProgressData {

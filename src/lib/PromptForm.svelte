@@ -10,6 +10,7 @@
     updateCheckpoint,
     updateUpscale,
     updateFaceDetailer,
+    updateSelectedLoras,
     addCategory,
     removeCategory,
     updateCategory,
@@ -21,17 +22,12 @@
   interface Props {
     availableCheckpoints: string[]
     disabledCategoryIds: Set<string>
-    onLorasChange?: (loras: string[]) => void
   }
 
-  let { availableCheckpoints, disabledCategoryIds, onLorasChange }: Props = $props()
-
-  // LoRA selection state
-  let selectedLoras = $state<string[]>([])
+  let { availableCheckpoints, disabledCategoryIds }: Props = $props()
 
   function handleLoraChange(loras: string[]) {
-    selectedLoras = loras
-    onLorasChange?.(loras)
+    updateSelectedLoras(loras)
   }
 
   // Dynamic category update functions
@@ -162,7 +158,7 @@
 
     <!-- LoRA Selector -->
     <div class="field">
-      <LoraSelector bind:selectedLoras onLoraChange={handleLoraChange} />
+      <LoraSelector selectedLoras={$promptsData.selectedLoras} onLoraChange={handleLoraChange} />
     </div>
 
     <div class="field">

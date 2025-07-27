@@ -28,7 +28,6 @@
   let availableCheckpoints: string[] = $state([])
   let imageViewer: { updateFileList: () => Promise<void> } | undefined
   let isGeneratingForever = $state(false)
-  let selectedLoras = $state<string[]>([])
   let shouldStopGeneration = $state(false)
   let disabledCategoryIds = $state<Set<string>>(new Set())
 
@@ -90,7 +89,7 @@
       promptsData: currentPromptsData!,
       settings,
       resolvedRandomValues: resolvedValues,
-      selectedLoras,
+      selectedLoras: currentPromptsData!.selectedLoras,
       onLoadingChange: (loading) => {
         isLoading = loading
       },
@@ -190,7 +189,7 @@
 <main class="prompt-input">
   <div class="content-grid">
     <section class="form-section">
-      <PromptForm {availableCheckpoints} {disabledCategoryIds} onLorasChange={(loras) => selectedLoras = loras} />
+      <PromptForm {availableCheckpoints} {disabledCategoryIds} />
 
       <GenerationControls
         {isLoading}
