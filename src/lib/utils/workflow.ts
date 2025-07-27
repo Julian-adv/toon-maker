@@ -312,7 +312,7 @@ export const defaultWorkflowPrompt = {
   },
   '86': {
     inputs: {
-      image: 'C:\\Users\\jake\\CascadeProjects\\toon-maker\\static\\left-horizontal-mask.png'
+      image: 'static\\left-horizontal-mask.png'
     },
     class_type: 'LoadImage',
     _meta: {
