@@ -8,7 +8,7 @@ import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
 import { processPrompts } from './promptProcessing'
 import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
 import type { PromptsData, Settings, ProgressData, OptionItem, PromptCategory } from '$lib/types'
-
+import path from 'path'
 
 // Workflow node interfaces
 interface WorkflowNodeInput {
@@ -110,20 +110,25 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
       workflow['13'].inputs.text = promptParts[1] // Left side prompt
       workflow['51'].inputs.text = '' // Right side prompt (empty)
       // mask_1 uses base mask(whole), mask_2 uses empty mask
-      workflow['10'].inputs.mask_1 = ['27', 0]
+      workflow['10'].inputs.mask_1 = ['3', 0]
       workflow['10'].inputs.mask_2 = ['2', 0]
     } else {
       // Three+ prompt mode: use full regional separation
       workflow['12'].inputs.text = promptParts[0] // Overall base prompt
       workflow['13'].inputs.text = promptParts[1] // Left side prompt
       workflow['51'].inputs.text = promptParts[2] || '' // Right side prompt
-      // Keep original mask configuration for regional prompting
-      workflow['10'].inputs.mask_1 = ['4', 0]
-      workflow['10'].inputs.mask_2 = ['53', 0]
+      // Use left and inverted masks for regional prompting
+      workflow['10'].inputs.mask_1 = ['87', 0]
+      workflow['10'].inputs.mask_2 = ['88', 0]
     }
 
     // Set negative prompt
     workflow['18'].inputs.text = negativePrompt
+
+    // Get mask image path from server-side API
+    const maskResponse = await fetch('/api/mask-path')
+    const { maskImagePath } = await maskResponse.json()
+    workflow['86'].inputs.image = maskImagePath
 
     // Configure workflow based on settings
     configureWorkflow(workflow, promptsData, settings)

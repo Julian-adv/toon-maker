@@ -77,10 +77,11 @@ export function processPrompts(
 
   let excludedCategories: PromptCategory[] = []
   let faceDetailerWildcard: string = ''
+  let filteredCategories: PromptCategory[] = positiveCategories
 
   // Remove values from matching categories
   if (categoriesToRemove.length > 0) {
-    const filteredCategories: PromptCategory[] = []
+    filteredCategories = []
     excludedCategories = []
 
     // Single loop to categorize all categories
@@ -131,10 +132,10 @@ export function processPrompts(
 
     // Apply category reference replacement to the rebuilt prompt
     promptValue = replaceCategoryReferences(promptValue, positiveCategories, resolvedRandomValues)
-    
-    // Generate face detailer wildcard
-    faceDetailerWildcard = generateFaceDetailerWildcard(filteredCategories, resolvedRandomValues)
   }
+
+  // Generate face detailer wildcard (always, regardless of category removal)
+  faceDetailerWildcard = generateFaceDetailerWildcard(filteredCategories, resolvedRandomValues)
 
   return {
     promptValue,

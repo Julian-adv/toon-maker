@@ -17,7 +17,7 @@ export const defaultWorkflowPrompt = {
   '3': {
     inputs: {
       value: 1,
-      width: 416,
+      width: 832,
       height: 1216
     },
     class_type: 'SolidMask',
@@ -25,27 +25,14 @@ export const defaultWorkflowPrompt = {
       title: 'SolidMask'
     }
   },
-  '4': {
-    inputs: {
-      x: 0,
-      y: 0,
-      operation: 'add',
-      destination: ['2', 0],
-      source: ['3', 0]
-    },
-    class_type: 'MaskComposite',
-    _meta: {
-      title: 'MaskComposite'
-    }
-  },
   '10': {
     inputs: {
-      model: ['11', 0],
-      base_mask: ['27', 0],
+      model: ['85', 0],
+      base_mask: ['3', 0],
       cond_1: ['13', 0],
-      mask_1: ['4', 0],
+      mask_1: ['87', 0],
       cond_2: ['51', 0],
-      mask_2: ['53', 0]
+      mask_2: ['88', 0]
     },
     class_type: 'AttentionCouple|cgem156',
     _meta: {
@@ -74,7 +61,7 @@ export const defaultWorkflowPrompt = {
   '13': {
     inputs: {
       text: 'left side prompt',
-      clip: ['11', 1]
+      clip: ['85', 1]
     },
     class_type: 'CLIPTextEncode',
     _meta: {
@@ -138,15 +125,6 @@ export const defaultWorkflowPrompt = {
       title: 'VAE Decode'
     }
   },
-  '27': {
-    inputs: {
-      mask: ['2', 0]
-    },
-    class_type: 'InvertMask',
-    _meta: {
-      title: 'InvertMask'
-    }
-  },
   '45': {
     inputs: {
       scheduler: 'simple',
@@ -162,24 +140,11 @@ export const defaultWorkflowPrompt = {
   '51': {
     inputs: {
       text: 'right side prompt',
-      clip: ['11', 1]
+      clip: ['85', 1]
     },
     class_type: 'CLIPTextEncode',
     _meta: {
       title: 'CLIP Text Encode (Prompt)'
-    }
-  },
-  '53': {
-    inputs: {
-      x: 416,
-      y: 0,
-      operation: 'add',
-      destination: ['2', 0],
-      source: ['3', 0]
-    },
-    class_type: 'MaskComposite',
-    _meta: {
-      title: 'MaskComposite'
     }
   },
   '56': {
@@ -213,8 +178,8 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['19', 0],
-      model: ['11', 0],
-      clip: ['11', 1],
+      model: ['85', 0],
+      clip: ['85', 1],
       vae: ['11', 2],
       positive: ['12', 0],
       negative: ['18', 0],
@@ -305,8 +270,8 @@ export const defaultWorkflowPrompt = {
       tiled_encode: false,
       tiled_decode: false,
       image: ['64', 0],
-      model: ['11', 0],
-      clip: ['11', 1],
+      model: ['85', 0],
+      clip: ['85', 1],
       vae: ['11', 2],
       positive: ['12', 0],
       negative: ['18', 0],
@@ -319,13 +284,58 @@ export const defaultWorkflowPrompt = {
       title: 'FaceDetailer'
     }
   },
-  '77': {
+  '84': {
     inputs: {
-      images: ['56', 0]
+      lora_name: 'MoriiMee_Gothic_Niji_Style_Illustrious_r1.safetensors',
+      strength_model: 0.5,
+      strength_clip: 0.5,
+      model: ['11', 0],
+      clip: ['11', 1]
     },
-    class_type: 'SaveImageWebsocket',
+    class_type: 'LoraLoader',
     _meta: {
-      title: 'SaveImageWebsocket'
+      title: 'Load LoRA'
+    }
+  },
+  '85': {
+    inputs: {
+      lora_name: 'Niji_anime_illustrious.safetensors',
+      strength_model: 0.8,
+      strength_clip: 0.8,
+      model: ['84', 0],
+      clip: ['84', 1]
+    },
+    class_type: 'LoraLoader',
+    _meta: {
+      title: 'Load LoRA'
+    }
+  },
+  '86': {
+    inputs: {
+      image: 'C:\\Users\\jake\\CascadeProjects\\toon-maker\\static\\left-horizontal-mask.png'
+    },
+    class_type: 'LoadImage',
+    _meta: {
+      title: 'Load Image'
+    }
+  },
+  '87': {
+    inputs: {
+      channel: 'red',
+      image: ['86', 0]
+    },
+    class_type: 'ImageToMask',
+    _meta: {
+      title: 'Convert Image to Mask'
+    }
+  },
+  '88': {
+    inputs: {
+      mask: ['87', 0]
+    },
+    class_type: 'InvertMask',
+    _meta: {
+      title: 'InvertMask'
     }
   }
 }
