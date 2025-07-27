@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const maskImagePath = path.join(cwd(), 'static', 'left-horizontal-mask.png')
     return json({ maskImagePath })
-  } catch (error) {
+  } catch {
     return json({ error: 'Failed to resolve mask path' }, { status: 500 })
   }
 }

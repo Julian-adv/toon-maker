@@ -2,6 +2,7 @@
 <script lang="ts">
   import TextAreaInput from './TextAreaInput.svelte'
   import CategoryManagerDialog from './CategoryManagerDialog.svelte'
+  import LoraSelector from './LoraSelector.svelte'
   import {
     promptsData,
     updateCategoryValue,
@@ -23,6 +24,13 @@
   }
 
   let { availableCheckpoints, disabledCategoryIds }: Props = $props()
+
+  // LoRA selection state
+  let selectedLoras = $state<string[]>([])
+
+  function handleLoraChange(loras: string[]) {
+    selectedLoras = loras
+  }
 
   // Dynamic category update functions
   function handleCategoryValueChange(categoryId: string) {
@@ -150,6 +158,11 @@
       </select>
     </div>
 
+    <!-- LoRA Selector -->
+    <div class="field">
+      <LoraSelector bind:selectedLoras onLoraChange={handleLoraChange} />
+    </div>
+
     <div class="field">
       <label class="checkbox-label">
         <input
@@ -194,7 +207,7 @@
     flex-direction: column;
     gap: 0.2rem;
     overflow-y: auto;
-    max-height: calc(100vh - 300px);
+    max-height: calc(100vh - 450px);
     padding-right: 4px;
   }
 

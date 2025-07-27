@@ -8,7 +8,6 @@ import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
 import { processPrompts } from './promptProcessing'
 import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
 import type { PromptsData, Settings, ProgressData, OptionItem, PromptCategory } from '$lib/types'
-import path from 'path'
 
 // Workflow node interfaces
 interface WorkflowNodeInput {
