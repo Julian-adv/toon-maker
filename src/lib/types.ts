@@ -46,6 +46,7 @@ export interface PromptsData {
   useUpscale: boolean
   useFaceDetailer: boolean
   selectedLoras: string[]
+  loraWeight: number
 }
 
 export interface ProgressData {

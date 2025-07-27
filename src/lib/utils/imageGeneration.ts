@@ -115,7 +115,7 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     workflow['86'].inputs.image = maskImagePath
 
     // Configure LoRA chain
-    generateLoraChain(selectedLoras, workflow)
+    generateLoraChain(selectedLoras, workflow, promptsData.loraWeight)
 
     // Configure workflow based on settings
     configureWorkflow(workflow, promptsData, settings)

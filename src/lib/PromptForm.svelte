@@ -11,6 +11,7 @@
     updateUpscale,
     updateFaceDetailer,
     updateSelectedLoras,
+    updateLoraWeight,
     addCategory,
     removeCategory,
     updateCategory,
@@ -28,6 +29,10 @@
 
   function handleLoraChange(loras: string[]) {
     updateSelectedLoras(loras)
+  }
+
+  function handleLoraWeightChange(weight: number) {
+    updateLoraWeight(weight)
   }
 
   // Dynamic category update functions
@@ -158,7 +163,12 @@
 
     <!-- LoRA Selector -->
     <div class="field">
-      <LoraSelector selectedLoras={$promptsData.selectedLoras} onLoraChange={handleLoraChange} />
+      <LoraSelector
+        selectedLoras={$promptsData.selectedLoras}
+        onLoraChange={handleLoraChange}
+        loraWeight={$promptsData.loraWeight}
+        onWeightChange={handleLoraWeightChange}
+      />
     </div>
 
     <div class="field">
@@ -205,7 +215,7 @@
     flex-direction: column;
     gap: 0.2rem;
     overflow-y: auto;
-    max-height: calc(100vh - 470px);
+    max-height: calc(100vh - 480px);
     padding-right: 4px;
   }
 

@@ -5,7 +5,7 @@ export const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our d
 import type { ComfyUIWorkflow } from '$lib/types'
 
 // Dynamic LoRA chain generation
-export function generateLoraChain(selectedLoras: string[], workflow: ComfyUIWorkflow) {
+export function generateLoraChain(selectedLoras: string[], workflow: ComfyUIWorkflow, loraWeight: number = 0.8) {
   // Remove existing LoRA nodes (70-85)
   for (let i = 70; i <= 85; i++) {
     delete workflow[i.toString()]
@@ -28,8 +28,8 @@ export function generateLoraChain(selectedLoras: string[], workflow: ComfyUIWork
     workflow[nodeId] = {
       inputs: {
         lora_name: lora,
-        strength_model: 0.8,
-        strength_clip: 0.8,
+        strength_model: loraWeight,
+        strength_clip: loraWeight,
         model: [previousModelNode, 0],
         clip: [previousClipNode, 1]
       },

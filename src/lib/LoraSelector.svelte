@@ -4,9 +4,11 @@
   interface Props {
     selectedLoras: string[]
     onLoraChange: (loras: string[]) => void
+    loraWeight: number
+    onWeightChange: (weight: number) => void
   }
 
-  let { selectedLoras, onLoraChange }: Props = $props()
+  let { selectedLoras, onLoraChange, loraWeight, onWeightChange }: Props = $props()
 
   let availableLoras: string[] = $state([])
   let loading = $state(true)
@@ -46,6 +48,10 @@
     onLoraChange(newSelectedLoras)
   }
 
+  function handleWeightChange(weight: number) {
+    onWeightChange(weight)
+  }
+
   onMount(() => {
     fetchLoras()
   })
@@ -79,11 +85,24 @@
     </div>
   {/if}
 
-  {#if selectedLoras.length > 0}
-    <div class="mt-2 text-xs text-gray-600">
-      Selected: {selectedLoras.length} LoRA{selectedLoras.length > 1 ? 's' : ''}
+  <div class="mt-2 flex items-center gap-3">
+    <div class="text-xs text-gray-600">
+      Selected: {selectedLoras.length} LoRA{selectedLoras.length !== 1 ? 's' : ''}
     </div>
-  {/if}
+    <div class="flex items-center gap-1">
+      <label for="lora-weight" class="text-xs text-gray-600">Weight:</label>
+      <input
+        id="lora-weight"
+        type="number"
+        min="0"
+        max="2"
+        step="0.1"
+        value={loraWeight}
+        onchange={(e) => handleWeightChange(parseFloat((e.target as HTMLInputElement).value))}
+        class="w-16 px-1 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
+      />
+    </div>
+  </div>
 </div>
 
 <style>
