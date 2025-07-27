@@ -2,6 +2,68 @@
 
 export const FINAL_SAVE_NODE_ID = 'final_save_output' // Consistent ID for our dynamically added save node
 
+import type { ComfyUIWorkflow } from '$lib/types'
+
+// Dynamic LoRA chain generation
+export function generateLoraChain(selectedLoras: string[], workflow: ComfyUIWorkflow) {
+  // Remove existing LoRA nodes (70-85)
+  for (let i = 70; i <= 85; i++) {
+    delete workflow[i.toString()]
+  }
+
+  if (selectedLoras.length === 0) {
+    // If no LoRAs selected, update all references to point to node '11'
+    updateLoraReferences(workflow, '11')
+    return
+  }
+
+  // Generate LoRA chain starting from node 70
+  let previousModelNode = '11'
+  let previousClipNode = '11'
+  let lastLoraNodeId = '11'
+
+  selectedLoras.forEach((lora, index) => {
+    const nodeId = (70 + index).toString()
+    
+    workflow[nodeId] = {
+      inputs: {
+        lora_name: lora,
+        strength_model: 0.8,
+        strength_clip: 0.8,
+        model: [previousModelNode, 0],
+        clip: [previousClipNode, 1]
+      },
+      class_type: 'LoraLoader',
+      _meta: {
+        title: `Load LoRA ${index + 1}`
+      }
+    }
+
+    previousModelNode = nodeId
+    previousClipNode = nodeId
+    lastLoraNodeId = nodeId
+  })
+
+  // Update all references to the last LoRA node
+  updateLoraReferences(workflow, lastLoraNodeId)
+}
+
+function updateLoraReferences(workflow: ComfyUIWorkflow, targetNodeId: string) {
+  // Update all nodes that were referencing '85' to use the target node
+  const nodesToUpdate = ['10', '12', '13', '18', '51', '56', '69']
+  
+  nodesToUpdate.forEach(nodeId => {
+    if (workflow[nodeId] && workflow[nodeId].inputs) {
+      if (workflow[nodeId].inputs.model && Array.isArray(workflow[nodeId].inputs.model)) {
+        workflow[nodeId].inputs.model = [targetNodeId, 0]
+      }
+      if (workflow[nodeId].inputs.clip && Array.isArray(workflow[nodeId].inputs.clip)) {
+        workflow[nodeId].inputs.clip = [targetNodeId, 1]
+      }
+    }
+  })
+}
+
 export const defaultWorkflowPrompt = {
   '2': {
     inputs: {
@@ -282,32 +344,6 @@ export const defaultWorkflowPrompt = {
     class_type: 'FaceDetailer',
     _meta: {
       title: 'FaceDetailer'
-    }
-  },
-  '84': {
-    inputs: {
-      lora_name: 'MoriiMee_Gothic_Niji_Style_Illustrious_r1.safetensors',
-      strength_model: 0.5,
-      strength_clip: 0.5,
-      model: ['11', 0],
-      clip: ['11', 1]
-    },
-    class_type: 'LoraLoader',
-    _meta: {
-      title: 'Load LoRA'
-    }
-  },
-  '85': {
-    inputs: {
-      lora_name: 'Niji_anime_illustrious.safetensors',
-      strength_model: 0.8,
-      strength_clip: 0.8,
-      model: ['84', 0],
-      clip: ['84', 1]
-    },
-    class_type: 'LoraLoader',
-    _meta: {
-      title: 'Load LoRA'
     }
   },
   '86': {

@@ -4,32 +4,16 @@
 
 import { saveImage } from './fileIO'
 import { connectWebSocket, type WebSocketCallbacks } from './comfyui'
-import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID } from './workflow'
+import { defaultWorkflowPrompt, FINAL_SAVE_NODE_ID, generateLoraChain } from './workflow'
 import { processPrompts } from './promptProcessing'
 import { getEffectiveCategoryValueFromResolved } from '../stores/promptsStore'
-import type { PromptsData, Settings, ProgressData, OptionItem, PromptCategory } from '$lib/types'
-
-// Workflow node interfaces
-interface WorkflowNodeInput {
-  [key: string]: string | number | boolean | [string, number] | undefined
-}
-
-interface WorkflowNode {
-  inputs: WorkflowNodeInput
-  class_type: string
-  _meta?: {
-    title?: string
-  }
-}
-
-interface ComfyUIWorkflow {
-  [nodeId: string]: WorkflowNode
-}
+import type { PromptsData, Settings, ProgressData, OptionItem, PromptCategory, ComfyUIWorkflow } from '$lib/types'
 
 export interface GenerationOptions {
   promptsData: PromptsData
   settings: Settings
   resolvedRandomValues: Record<string, OptionItem>
+  selectedLoras: string[]
   onLoadingChange: (loading: boolean) => void
   onProgressUpdate: (progress: ProgressData) => void
   onImageReceived: (imageBlob: Blob, filePath: string) => void
@@ -42,6 +26,7 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     promptsData,
     settings,
     resolvedRandomValues,
+    selectedLoras,
     onLoadingChange,
     onProgressUpdate,
     onImageReceived,
@@ -128,6 +113,9 @@ export async function generateImage(options: GenerationOptions): Promise<void> {
     const maskResponse = await fetch('/api/mask-path')
     const { maskImagePath } = await maskResponse.json()
     workflow['86'].inputs.image = maskImagePath
+
+    // Configure LoRA chain
+    generateLoraChain(selectedLoras, workflow)
 
     // Configure workflow based on settings
     configureWorkflow(workflow, promptsData, settings)

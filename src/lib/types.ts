@@ -1,5 +1,22 @@
 // Common type definitions used across the application
 
+// ComfyUI Workflow types
+export interface WorkflowNodeInput {
+  [key: string]: string | number | boolean | [string, number] | undefined
+}
+
+export interface WorkflowNode {
+  inputs: WorkflowNodeInput
+  class_type: string
+  _meta?: {
+    title?: string
+  }
+}
+
+export interface ComfyUIWorkflow {
+  [nodeId: string]: WorkflowNode
+}
+
 export interface OptionItem {
   title: string
   value: string

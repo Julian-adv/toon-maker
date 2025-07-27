@@ -21,15 +21,17 @@
   interface Props {
     availableCheckpoints: string[]
     disabledCategoryIds: Set<string>
+    onLorasChange?: (loras: string[]) => void
   }
 
-  let { availableCheckpoints, disabledCategoryIds }: Props = $props()
+  let { availableCheckpoints, disabledCategoryIds, onLorasChange }: Props = $props()
 
   // LoRA selection state
   let selectedLoras = $state<string[]>([])
 
   function handleLoraChange(loras: string[]) {
     selectedLoras = loras
+    onLorasChange?.(loras)
   }
 
   // Dynamic category update functions
@@ -207,7 +209,7 @@
     flex-direction: column;
     gap: 0.2rem;
     overflow-y: auto;
-    max-height: calc(100vh - 450px);
+    max-height: calc(100vh - 470px);
     padding-right: 4px;
   }
 
