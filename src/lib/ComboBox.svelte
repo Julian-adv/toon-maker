@@ -90,9 +90,17 @@
     const target = event.target as HTMLInputElement
     inputValue = target.value
     updateDropdown()
-    // Update the value object with the new input
-    value = { ...value, title: inputValue }
-    onValueChange(value)
+    
+    // Only update value if there's an exact match
+    const exactMatch = options.find(
+      (option) => option.title.toLowerCase() === inputValue.toLowerCase()
+    )
+    
+    if (exactMatch) {
+      value = { ...exactMatch }
+      onValueChange(value)
+    }
+    // Don't update value for non-matching input
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -140,6 +148,16 @@
   function handleBlur() {
     // Use setTimeout to allow option clicks to be processed before hiding
     setTimeout(() => {
+      // Reset input to selected value if no exact match
+      const exactMatch = options.find(
+        (option) => option.title.toLowerCase() === inputValue.toLowerCase()
+      )
+      
+      if (!exactMatch) {
+        // Reset to current selected value
+        inputValue = value.title || ''
+      }
+      
       showDropdown = false
       selectedIndex = -1
     }, 150)

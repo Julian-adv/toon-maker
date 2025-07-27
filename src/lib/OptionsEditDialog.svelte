@@ -197,6 +197,45 @@
     }
   }
 
+  function handleDuplicateOption() {
+    if (!selectedOption.title) return
+
+    // Auto-update current option before duplicating
+    if (
+      newOptionValue.trim() !== selectedOption.value ||
+      editedOptionTitle.trim() !== selectedOption.title
+    ) {
+      handleUpdateOption()
+    }
+
+    // Generate unique title by adding number suffix
+    let duplicateTitle = selectedOption.title
+    let counter = 2
+    while (options.some(option => option.title.toLowerCase() === duplicateTitle.toLowerCase())) {
+      duplicateTitle = `${selectedOption.title} ${counter}`
+      counter++
+    }
+
+    const duplicatedOption: OptionItem = {
+      title: duplicateTitle,
+      value: selectedOption.value
+    }
+
+    // Insert duplicated option right after the original option
+    const currentIndex = options.findIndex(option => option.title === selectedOption.title)
+    const updatedOptions = [...options]
+    updatedOptions.splice(currentIndex + 1, 0, duplicatedOption)
+    onOptionsChange(updatedOptions)
+
+    // Select the newly duplicated option
+    selectedOption = duplicatedOption
+    onValueChange(duplicatedOption)
+
+    // Update form fields
+    newOptionValue = duplicatedOption.value || ''
+    editedOptionTitle = duplicatedOption.title
+  }
+
   function handleDeleteOption() {
     const updatedOptions = options.filter((option) => option.title !== selectedOption.title)
     onOptionsChange(updatedOptions)
@@ -433,10 +472,23 @@
               rows={1}
             />
             <button
+              class="duplicate-option-btn"
+              onclick={handleDuplicateOption}
+              disabled={!selectedOption.title || isLinkedToCategory}
+              aria-label="Duplicate option"
+              title="Duplicate this option"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5,15H4a2,2 0 0,1 -2,-2V4a2,2 0 0,1 2,-2H13a2,2 0 0,1 2,2v1"></path>
+              </svg>
+            </button>
+            <button
               class="delete-option-btn"
               onclick={handleDeleteOption}
               disabled={!selectedOption.title || options.length === 0 || isLinkedToCategory}
               aria-label="Delete option"
+              title="Delete this option"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <polyline points="3,6 5,6 21,6"></polyline>
@@ -739,6 +791,34 @@
     color: #999 !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
+  }
+
+  .duplicate-option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: #e8f5e8;
+    border: 1px solid #c8e6c9;
+    border-radius: 4px;
+    color: #2e7d32;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .duplicate-option-btn:hover:not(:disabled) {
+    background: #c8e6c9;
+    border-color: #a5d6a7;
+    color: #1b5e20;
+  }
+
+  .duplicate-option-btn:disabled {
+    background: #cccccc;
+    border-color: #cccccc;
+    color: #999;
+    cursor: not-allowed;
   }
 
   .delete-option-btn {
